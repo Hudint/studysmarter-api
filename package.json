@@ -1,0 +1,27 @@
+{
+  "name": "studysmarter",
+  "version": "1.0.0",
+  "description": "StudySmarter API Wrapper",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hudint/studysmarter-api.git"
+  },
+  "author": "Hudint <Finn Weigand>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Hudint/studysmarter-api/issues"
+  },
+  "homepage": "https://github.com/Hudint/studysmarter-api#readme",
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
