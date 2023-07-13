@@ -1,6 +1,7 @@
 import * as decompress from 'decompress';
 import * as fs from "fs";
 import * as Database from 'better-sqlite3';
+import {SetColor} from "./StudySmarterStudySet";
 
 type Card = {
     front: string,
@@ -15,11 +16,27 @@ type Deck = {
 
 type AnkiResult = {
     decks: Deck[],
-    imagePaths: {name: string, path: string}[]
+    imagePaths: { name: string, path: string }[]
 }
 
 export default class Utils {
     private constructor() {
+    }
+
+    public static parseColor(color: string): SetColor {
+        let c;
+        if(/^[0-9]+$/g.test(color)) c = parseInt(color);
+        else c = parseInt(SetColor[color]);
+
+        if(isNaN(c)) throw new Error("Invalid color: " + color);
+
+        return c;
+    }
+
+    public static collectOption<T>(value: T, prev: T[]): T[]{
+        if(!prev) prev = [];
+        prev.push(value);
+        return prev;
     }
 
     public static checkParamsAreSet(params: any): void {
@@ -39,11 +56,14 @@ export default class Utils {
         return matches;
     }
 
-    public static async convertFromAnki(file: string): Promise<AnkiResult>{
-        fs.rmSync("unpackaged/", {recursive: true});
+    public static async convertFromAnki(file: string): Promise<AnkiResult> {
+        if (!fs.existsSync(file)) throw new Error("File does not exist");
+        if(!file.endsWith(".apkg")) throw new Error("File is not an apkg file");
+        if (fs.existsSync("unpackaged/")) fs.rmSync("unpackaged/", {recursive: true});
+
         await decompress(file, "unpackaged");
         const media = JSON.parse(fs.readFileSync("unpackaged/media", "utf8"));
-        const imagePaths: {name: string, path: string}[] = [];
+        const imagePaths: { name: string, path: string }[] = [];
         Object.entries(media).forEach(([k, v]) => {
             fs.renameSync(`unpackaged/${k}`, `unpackaged/${v}`)
             imagePaths.push({
@@ -54,7 +74,7 @@ export default class Utils {
 
         const db = new Database("unpackaged/collection.anki21");
         const cols: any[] = db.prepare("SELECT * FROM col").all();
-        const decks : Deck[] = [];
+        const decks: Deck[] = [];
         cols.forEach(col => {
             Object.values(JSON.parse(col.decks)).forEach(((deck: any) => {
                 const cards = db.prepare("select * from cards where did = ?").all(deck.id);
@@ -62,10 +82,13 @@ export default class Utils {
                     id: deck.id,
                     name: deck.name,
                     cards: cards.map(card => db.prepare("select * from notes where id = ?").get(card["nid"]))
-                        .map(note => ({
-                            front: note["sfld"],
-                            back: note["flds"]
-                        }))
+                        .map(note => {
+                            const fields = note["flds"].split("\x1f");
+                            return {
+                                front: fields[0],
+                                back: fields[1]
+                            }
+                        })
                 })
             }))
         })

@@ -9,7 +9,7 @@ declare enum SetColor {
     Green = 6,
     Violet = 7
 }
-type FlashcardImage = {
+declare type FlashcardImage = {
     "id": number;
     "image_string": string;
     "presigned_url": string;
@@ -23,7 +23,7 @@ type FlashcardImage = {
     "localID": number;
     "flashcardinfo"?: number;
 };
-type ImageEntry = {
+declare type ImageEntry = {
     "name": string;
     "image_string"?: string;
     "image_file"?: Blob;
@@ -42,6 +42,7 @@ export default class StudySmarterStudySet {
     get creator_id(): number;
     get isShared(): boolean;
     getFlashCards(): Promise<any>;
+    delete(): Promise<Response>;
     addFlashCard(question: string, answer: string, images?: ImageEntry[]): Promise<any>;
     private replaceImageTags;
     private uploadImage;

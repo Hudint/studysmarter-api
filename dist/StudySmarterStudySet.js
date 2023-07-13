@@ -12,7 +12,8 @@ var SetColor;
     SetColor[SetColor["Orange"] = 5] = "Orange";
     SetColor[SetColor["Green"] = 6] = "Green";
     SetColor[SetColor["Violet"] = 7] = "Violet";
-})(SetColor || (exports.SetColor = SetColor = {}));
+})(SetColor || (SetColor = {}));
+exports.SetColor = SetColor;
 class StudySmarterStudySet {
     constructor(account, id, name, color, creator_id, isShared) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, creator_id, isShared });
@@ -39,16 +40,21 @@ class StudySmarterStudySet {
         return this._isShared;
     }
     getFlashCards() {
-        return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
             method: "GET"
         }).then(({ results }) => results.map(r => StudySmarterStudySet.fromJSON(this._account, r)));
+    }
+    async delete() {
+        return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/`, {
+            method: "DELETE"
+        });
     }
     async addFlashCard(question, answer, images = []) {
         // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
         let imageObjects = {};
         const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
         const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
-        return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
             method: "POST",
             body: JSON.stringify({
                 "flashcard_image_ids": Object.values(imageObjects).map(i => i.id),
@@ -82,8 +88,7 @@ class StudySmarterStudySet {
         const body = new FormData();
         body.append("image_file", (_a = image.image_file) !== null && _a !== void 0 ? _a : await fetch(image.image_string).then(r => r.blob()));
         body.append("localID", "" + Date.now());
-        console.log("sending image", body);
-        return await this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
+        return await this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
             method: "POST",
             body
         }, false);

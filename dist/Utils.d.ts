@@ -1,13 +1,14 @@
-type Card = {
+import { SetColor } from "./StudySmarterStudySet";
+declare type Card = {
     front: string;
     back: string;
 };
-type Deck = {
+declare type Deck = {
     id: number;
     name: string;
     cards: Card[];
 };
-type AnkiResult = {
+declare type AnkiResult = {
     decks: Deck[];
     imagePaths: {
         name: string;
@@ -16,6 +17,8 @@ type AnkiResult = {
 };
 export default class Utils {
     private constructor();
+    static parseColor(color: string): SetColor;
+    static collectOption<T>(value: T, prev: T[]): T[];
     static checkParamsAreSet(params: any): void;
     static regexExecArray(regex: RegExp, str: string): RegExpExecArray[];
     static convertFromAnki(file: string): Promise<AnkiResult>;

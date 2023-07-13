@@ -18,6 +18,10 @@ export default class StudySmarterAccount {
         return this._token;
     }
 
+    public fetchJson(url: string, RequestInit: RequestInit, setContentType: boolean = true) {
+        return this.fetch(url, RequestInit, setContentType).then(res => res.json())
+    }
+
     public fetch(url: string, RequestInit: RequestInit, setContentType: boolean = true) {
         return fetch(url, {
             ...RequestInit,
@@ -25,11 +29,11 @@ export default class StudySmarterAccount {
                 authorization: `Token ${this._token}`,
                 ...(setContentType ? {"Content-Type": "application/json"} : {})
             }
-        }).then(StudySmarterAccount.resCodeCheck)
+        }).then(StudySmarterAccount.validateResponse)
     }
 
     public changePassword(newPassword: string) {
-        return this.fetch(`https://prod.studysmarter.de/users/${this._id}/`, {
+        return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {
             method: "PATCH",
             body: JSON.stringify({
                 user: {
@@ -40,7 +44,7 @@ export default class StudySmarterAccount {
     }
 
     public createStudySet(name: string, color: SetColor, isPublic: boolean) {
-        return this.fetch(`https://prod.studysmarter.de/studysets/`, {
+        return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "POST",
             body: JSON.stringify({
                 colorId: color,
@@ -53,15 +57,15 @@ export default class StudySmarterAccount {
     }
 
     public getStudySets() : Promise<StudySmarterStudySet[]> {
-        return this.fetch(`https://prod.studysmarter.de/studysets/`, {
+        return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "GET",
         })
             .then(json => json.results.map((set: any) => StudySmarterStudySet.fromJSON(this, set)))
     }
 
-    private static async resCodeCheck(res: Response) : Promise<any> {
+    private static async validateResponse(res: Response) {
         if(String(res.status).startsWith("2")) {
-            return await res.json();
+            return res;
         }else {
             return Promise.reject(JSON.stringify({
                 status: res.status,
@@ -82,9 +86,9 @@ export default class StudySmarterAccount {
                 "Content-Type": "application/json"
             }
         })
-            .then(StudySmarterAccount.resCodeCheck)
+            .then(StudySmarterAccount.validateResponse)
+            .then(res => res.json())
             .then(json => {
-                console.log("LOGIN RESPONSE", json)
                 if (json.error_code == "001") {
                     return Promise.reject("Invalid credentials")
                 }

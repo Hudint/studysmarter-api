@@ -1,6 +1,6 @@
 import StudySmarterAccount from "./StudySmarterAccount";
 import { FlashcardImage } from "./StudySmarterStudySet";
-type htmlPart = {
+declare type htmlPart = {
     text: string;
     is_correct: boolean;
 };

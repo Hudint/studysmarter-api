@@ -12,6 +12,9 @@ class StudySmarterAccount {
     get token() {
         return this._token;
     }
+    fetchJson(url, RequestInit, setContentType = true) {
+        return this.fetch(url, RequestInit, setContentType).then(res => res.json());
+    }
     fetch(url, RequestInit, setContentType = true) {
         return fetch(url, {
             ...RequestInit,
@@ -19,10 +22,10 @@ class StudySmarterAccount {
                 authorization: `Token ${this._token}`,
                 ...(setContentType ? { "Content-Type": "application/json" } : {})
             }
-        }).then(StudySmarterAccount.resCodeCheck);
+        }).then(StudySmarterAccount.validateResponse);
     }
     changePassword(newPassword) {
-        return this.fetch(`https://prod.studysmarter.de/users/${this._id}/`, {
+        return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {
             method: "PATCH",
             body: JSON.stringify({
                 user: {
@@ -32,7 +35,7 @@ class StudySmarterAccount {
         });
     }
     createStudySet(name, color, isPublic) {
-        return this.fetch(`https://prod.studysmarter.de/studysets/`, {
+        return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "POST",
             body: JSON.stringify({
                 colorId: color,
@@ -44,14 +47,14 @@ class StudySmarterAccount {
         }).then(json => StudySmarterStudySet_1.default.fromJSON(this, json));
     }
     getStudySets() {
-        return this.fetch(`https://prod.studysmarter.de/studysets/`, {
+        return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "GET",
         })
             .then(json => json.results.map((set) => StudySmarterStudySet_1.default.fromJSON(this, set)));
     }
-    static async resCodeCheck(res) {
+    static async validateResponse(res) {
         if (String(res.status).startsWith("2")) {
-            return await res.json();
+            return res;
         }
         else {
             return Promise.reject(JSON.stringify({
@@ -72,9 +75,9 @@ class StudySmarterAccount {
                 "Content-Type": "application/json"
             }
         })
-            .then(StudySmarterAccount.resCodeCheck)
+            .then(StudySmarterAccount.validateResponse)
+            .then(res => res.json())
             .then(json => {
-            console.log("LOGIN RESPONSE", json);
             if (json.error_code == "001") {
                 return Promise.reject("Invalid credentials");
             }

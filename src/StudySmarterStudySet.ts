@@ -77,9 +77,15 @@ export default class StudySmarterStudySet {
     }
 
     getFlashCards() {
-        return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
             method: "GET"
         }).then(({results}) => results.map(r => StudySmarterStudySet.fromJSON(this._account, r)))
+    }
+
+    async delete() {
+        return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/`, {
+            method: "DELETE"
+        })
     }
 
     async addFlashCard(question: string, answer: string, images: ImageEntry[] = []) {
@@ -89,7 +95,7 @@ export default class StudySmarterStudySet {
         const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
         const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
 
-        return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
             method: "POST",
             body: JSON.stringify({
                 "flashcard_image_ids": Object.values(imageObjects).map(i => i.id),
@@ -126,8 +132,7 @@ export default class StudySmarterStudySet {
         const body = new FormData();
         body.append("image_file", image.image_file ?? await fetch(image.image_string).then(r => r.blob()));
         body.append("localID", "" + Date.now());
-        console.log("sending image", body)
-        return await this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
+        return await this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
             method: "POST",
             body
         }, false)

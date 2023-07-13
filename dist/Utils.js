@@ -3,8 +3,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const decompress = require("decompress");
 const fs = require("fs");
 const Database = require("better-sqlite3");
+const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 class Utils {
     constructor() {
+    }
+    static parseColor(color) {
+        let c;
+        if (/^[0-9]+$/g.test(color))
+            c = parseInt(color);
+        else
+            c = parseInt(StudySmarterStudySet_1.SetColor[color]);
+        if (isNaN(c))
+            throw new Error("Invalid color: " + color);
+        return c;
+    }
+    static collectOption(value, prev) {
+        if (!prev)
+            prev = [];
+        prev.push(value);
+        return prev;
     }
     static checkParamsAreSet(params) {
         Object.entries(params)
@@ -22,7 +39,12 @@ class Utils {
         return matches;
     }
     static async convertFromAnki(file) {
-        fs.rmSync("unpackaged/", { recursive: true });
+        if (!fs.existsSync(file))
+            throw new Error("File does not exist");
+        if (!file.endsWith(".apkg"))
+            throw new Error("File is not an apkg file");
+        if (fs.existsSync("unpackaged/"))
+            fs.rmSync("unpackaged/", { recursive: true });
         await decompress(file, "unpackaged");
         const media = JSON.parse(fs.readFileSync("unpackaged/media", "utf8"));
         const imagePaths = [];
@@ -43,10 +65,13 @@ class Utils {
                     id: deck.id,
                     name: deck.name,
                     cards: cards.map(card => db.prepare("select * from notes where id = ?").get(card["nid"]))
-                        .map(note => ({
-                        front: note["sfld"],
-                        back: note["flds"]
-                    }))
+                        .map(note => {
+                        const fields = note["flds"].split("\x1f");
+                        return {
+                            front: fields[0],
+                            back: fields[1]
+                        };
+                    })
                 });
             }));
         });
