@@ -1,11 +1,11 @@
 {
-  "name": "studysmarter",
+  "name": "studysmarter-api",
   "version": "1.0.0",
   "description": "StudySmarter API Wrapper",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "studysmarter": "./dist/cli.js"
+    "studysmarter-api": "./dist/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
