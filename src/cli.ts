@@ -96,7 +96,7 @@ async function run(email, password) {
         if (!selectedSet) throw new Error("No set selected");
         for (const text of options.addFlashcard) {
             printVerbose("Adding Flashcard:", text)
-            const [front, back] = text.split("|");
+            const [front, back] = text.split(";");
             await selectedSet.addFlashCard(front, back);
             printSuccess(`Added Flashcard With Front: '${front}' Back: '${back}' to set '${selectedSet.name}'`);
         }
