@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const decompress = require("decompress");
 const fs = require("fs");
 const Database = require("better-sqlite3");
+const path = require("path");
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 class Utils {
     constructor() {
@@ -43,19 +44,21 @@ class Utils {
             throw new Error("File does not exist");
         if (!file.endsWith(".apkg"))
             throw new Error("File is not an apkg file");
-        if (fs.existsSync("unpackaged/"))
-            fs.rmSync("unpackaged/", { recursive: true });
-        await decompress(file, "unpackaged");
-        const media = JSON.parse(fs.readFileSync("unpackaged/media", "utf8"));
+        const outFolder = path.join(__dirname, "..", "unpackaged");
+        if (fs.existsSync(outFolder))
+            fs.rmSync(outFolder, { recursive: true });
+        await decompress(file, outFolder);
+        const media = JSON.parse(fs.readFileSync(path.join(outFolder, "media"), "utf8"));
         const imagePaths = [];
         Object.entries(media).forEach(([k, v]) => {
-            fs.renameSync(`unpackaged/${k}`, `unpackaged/${v}`);
+            const newPath = path.join(outFolder, v);
+            fs.renameSync(path.join(outFolder, k), newPath);
             imagePaths.push({
                 name: String(v),
-                path: `unpackaged/${v}`
+                path: path.join(outFolder, newPath)
             });
         });
-        const db = new Database("unpackaged/collection.anki21");
+        const db = new Database(path.join(outFolder, "collection.anki2"), { readonly: true });
         const cols = db.prepare("SELECT * FROM col").all();
         const decks = [];
         cols.forEach(col => {
@@ -77,7 +80,8 @@ class Utils {
         });
         return {
             decks,
-            imagePaths
+            imagePaths,
+            outFolder
         };
     }
 }

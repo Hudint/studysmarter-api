@@ -14,6 +14,7 @@ declare type AnkiResult = {
         name: string;
         path: string;
     }[];
+    outFolder: string;
 };
 export default class Utils {
     private constructor();

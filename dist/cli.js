@@ -94,7 +94,6 @@ async function run(email, password) {
             throw new Error("No set selected");
         await selectedSet.delete();
         printSuccess(`Deleted Set '${selectedSet.name}'`);
-        selectedSet = undefined;
     }
     if (options.deleteAllSets) {
         sets = sets || await account.getStudySets();
@@ -125,7 +124,7 @@ async function run(email, password) {
             }
         }
         progress.stop();
-        fs.rmSync("unpackaged/", { recursive: true });
+        fs.rmSync(ankiResult.outFolder, { recursive: true });
     }
 }
 ;

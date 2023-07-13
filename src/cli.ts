@@ -144,13 +144,11 @@ async function run(email, password) {
             }
         }
         progress.stop();
-        fs.rmSync("unpackaged/", {recursive: true})
+        fs.rmSync(ankiResult.outFolder, {recursive: true})
     }
 
 
 }
-
-;
 
 
 

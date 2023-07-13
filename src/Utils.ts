@@ -1,6 +1,7 @@
 import * as decompress from 'decompress';
 import * as fs from "fs";
 import * as Database from 'better-sqlite3';
+import * as path from "path";
 import {SetColor} from "./StudySmarterStudySet";
 
 type Card = {
@@ -16,7 +17,8 @@ type Deck = {
 
 type AnkiResult = {
     decks: Deck[],
-    imagePaths: { name: string, path: string }[]
+    imagePaths: { name: string, path: string }[],
+    outFolder: string
 }
 
 export default class Utils {
@@ -59,20 +61,24 @@ export default class Utils {
     public static async convertFromAnki(file: string): Promise<AnkiResult> {
         if (!fs.existsSync(file)) throw new Error("File does not exist");
         if(!file.endsWith(".apkg")) throw new Error("File is not an apkg file");
-        if (fs.existsSync("unpackaged/")) fs.rmSync("unpackaged/", {recursive: true});
 
-        await decompress(file, "unpackaged");
-        const media = JSON.parse(fs.readFileSync("unpackaged/media", "utf8"));
+        const outFolder = path.join(__dirname, "..", "unpackaged");
+
+        if (fs.existsSync(outFolder)) fs.rmSync(outFolder, {recursive: true});
+
+        await decompress(file, outFolder);
+        const media = JSON.parse(fs.readFileSync(path.join(outFolder, "media"), "utf8"));
         const imagePaths: { name: string, path: string }[] = [];
-        Object.entries(media).forEach(([k, v]) => {
-            fs.renameSync(`unpackaged/${k}`, `unpackaged/${v}`)
+        Object.entries(media).forEach(([k, v] : [string, string]) => {
+            const newPath = path.join(outFolder, v);
+            fs.renameSync(path.join(outFolder, k), newPath)
             imagePaths.push({
                 name: String(v),
-                path: `unpackaged/${v}`
+                path: path.join(outFolder, newPath)
             });
         })
 
-        const db = new Database("unpackaged/collection.anki21");
+        const db = new Database(path.join(outFolder, "collection.anki2"), {readonly: true});
         const cols: any[] = db.prepare("SELECT * FROM col").all();
         const decks: Deck[] = [];
         cols.forEach(col => {
@@ -95,7 +101,8 @@ export default class Utils {
 
         return {
             decks,
-            imagePaths
+            imagePaths,
+            outFolder
         };
     }
 }
