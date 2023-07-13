@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 import * as chalk from "chalk";
 import {Option, program} from "commander";
 import * as figlet from "figlet";

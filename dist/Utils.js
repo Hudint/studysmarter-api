@@ -55,10 +55,10 @@ class Utils {
             fs.renameSync(path.join(outFolder, k), newPath);
             imagePaths.push({
                 name: String(v),
-                path: path.join(outFolder, newPath)
+                path: newPath
             });
         });
-        const db = new Database(path.join(outFolder, "collection.anki2"), { readonly: true });
+        const db = new Database(path.join(outFolder, "collection.anki21"), { readonly: true });
         const cols = db.prepare("SELECT * FROM col").all();
         const decks = [];
         cols.forEach(col => {

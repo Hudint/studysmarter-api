@@ -127,4 +127,3 @@ async function run(email, password) {
         fs.rmSync(ankiResult.outFolder, { recursive: true });
     }
 }
-;
