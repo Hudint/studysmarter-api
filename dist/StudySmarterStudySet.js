@@ -12,8 +12,7 @@ var SetColor;
     SetColor[SetColor["Orange"] = 5] = "Orange";
     SetColor[SetColor["Green"] = 6] = "Green";
     SetColor[SetColor["Violet"] = 7] = "Violet";
-})(SetColor || (SetColor = {}));
-exports.SetColor = SetColor;
+})(SetColor || (exports.SetColor = SetColor = {}));
 class StudySmarterStudySet {
     constructor(account, id, name, color, creator_id, isShared) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, creator_id, isShared });
@@ -45,19 +44,21 @@ class StudySmarterStudySet {
         }).then(({ results }) => results.map(r => StudySmarterStudySet.fromJSON(this._account, r)));
     }
     async addFlashCard(question, answer, images = []) {
-        const imageObjects = Object.fromEntries(await Promise.all(images.map(i => [i.name, this.uploadImage(i.image_string)])));
-        console.log(imageObjects);
+        // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
+        let imageObjects = {};
+        const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
+        const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
         return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
             method: "POST",
             body: JSON.stringify({
                 "flashcard_image_ids": Object.values(imageObjects).map(i => i.id),
                 "tags": [],
                 "question_html": [{
-                        text: StudySmarterStudySet.replaceImageTags(question, imageObjects),
+                        text: questionWithImages,
                         is_correct: true
                     }],
                 "answer_html": [{
-                        text: StudySmarterStudySet.replaceImageTags(answer, imageObjects),
+                        text: answerWithImages,
                         is_correct: true
                     }],
                 "shared": 2,
@@ -66,23 +67,26 @@ class StudySmarterStudySet {
             })
         });
     }
-    static replaceImageTags(text, images) {
+    async replaceImageTags(text, images, uploadedImages) {
         let result = text;
-        Utils_1.default.forEachRegex(/<img[^s>]*src="([^"]+)"[^>]*>/g, text, (match) => {
-            const image = images[match[1]];
-            result = result.replace(new RegExp(`<img[^s>]*src=\"${match[1]}\"[^>]*>`, "g"), `<img localid="${image.localId}" width="${image.width}" class="fr-fic fr-dii">`);
-        });
+        for (const match of Utils_1.default.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
+            const imageEntry = images.find(i => i.name === match[1]);
+            const uploaded = uploadedImages[imageEntry.name] || await this.uploadImage(imageEntry);
+            uploadedImages[imageEntry.name] = uploaded;
+            result = result.replace(new RegExp(`<img[^s>]*src=\"${match[1]}\"[^>]*>`, "g"), `<img localid="${uploaded.localID}" width="${uploaded.width}" class="fr-fic fr-dii">`);
+        }
         return result;
     }
-    async uploadImage(image_string) {
+    async uploadImage(image) {
+        var _a;
         const body = new FormData();
-        body.append("image_file", await fetch(image_string).then(r => r.blob()));
-        body.append("localId", "" + Date.now());
-        console.log("sending image");
+        body.append("image_file", (_a = image.image_file) !== null && _a !== void 0 ? _a : await fetch(image.image_string).then(r => r.blob()));
+        body.append("localID", "" + Date.now());
+        console.log("sending image", body);
         return await this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
             method: "POST",
             body
-        });
+        }, false);
     }
     static fromJSON(account, json) {
         return new StudySmarterStudySet(account, json["id"], json["name"], json["colorId"], json["creator_id"], json["shared"]);

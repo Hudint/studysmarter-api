@@ -18,9 +18,15 @@
   },
   "homepage": "https://github.com/Hudint/studysmarter-api#readme",
   "devDependencies": {
+    "@types/decompress": "^4.2.4",
+    "@types/node": "^20.4.2",
     "typescript": "^5.1.6"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@types/better-sqlite3": "^7.6.4",
+    "better-sqlite3": "^8.4.0",
+    "decompress": "^4.2.1"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

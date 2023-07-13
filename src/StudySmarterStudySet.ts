@@ -30,8 +30,10 @@ type FlashcardImage = {
 
 type ImageEntry = {
     "name": string,
-    "image_string": string
+    "image_string"?: string,
+    "image_file"?: Blob
 }
+
 
 export default class StudySmarterStudySet {
     private readonly _account: StudySmarterAccount;
@@ -81,26 +83,23 @@ export default class StudySmarterStudySet {
     }
 
     async addFlashCard(question: string, answer: string, images: ImageEntry[] = []) {
-
         // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
         let imageObjects: {[name: string]: FlashcardImage} = {};
 
-        for (const image of images) {
-            imageObjects[image.name] = await this.uploadImage(image.image_string);
-        }
+        const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
+        const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
 
-        console.log(imageObjects)
         return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
             method: "POST",
             body: JSON.stringify({
                 "flashcard_image_ids": Object.values(imageObjects).map(i => i.id),
                 "tags": [],
                 "question_html": [{
-                    text: StudySmarterStudySet.replaceImageTags(question, imageObjects),
+                    text: questionWithImages,
                     is_correct: true
                 }],
                 "answer_html": [{
-                    text: StudySmarterStudySet.replaceImageTags(answer, imageObjects),
+                    text: answerWithImages,
                     is_correct: true
                 }],
                 "shared": 2,
@@ -110,18 +109,22 @@ export default class StudySmarterStudySet {
         })
     }
 
-    private static replaceImageTags(text: string, images: {[name: string]: FlashcardImage}): string {
+    private async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {[name: string]: FlashcardImage}) {
         let result = text;
-        Utils.forEachRegex(/<img[^s>]*src="([^"]+)"[^>]*>/g, text, (match) => {
-            const image = images[match[1]];
-            result = result.replace(new RegExp(`<img[^s>]*src=\"${match[1]}\"[^>]*>`, "g"), `<img localid="${image.localID}" width="${image.width}" class="fr-fic fr-dii">`)
-        })
+
+        for(const match of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
+            const imageEntry = images.find(i => i.name === match[1]);
+            const uploaded = uploadedImages[imageEntry.name] || await this.uploadImage(imageEntry);
+            uploadedImages[imageEntry.name] = uploaded;
+
+            result = result.replace(new RegExp(`<img[^s>]*src=\"${match[1]}\"[^>]*>`, "g"), `<img localid="${uploaded.localID}" width="${uploaded.width}" class="fr-fic fr-dii">`)
+        }
         return result;
     }
 
-    private async uploadImage(image_string: string): Promise<FlashcardImage> {
+    private async uploadImage(image: ImageEntry): Promise<FlashcardImage> {
         const body = new FormData();
-        body.append("image_file", await fetch(image_string).then(r => r.blob()));
+        body.append("image_file", image.image_file ?? await fetch(image.image_string).then(r => r.blob()));
         body.append("localID", "" + Date.now());
         console.log("sending image", body)
         return await this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {

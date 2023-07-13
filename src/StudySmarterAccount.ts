@@ -49,7 +49,7 @@ export default class StudySmarterAccount {
                 shared: isPublic,
                 name
             })
-        })
+        }).then(json => StudySmarterStudySet.fromJSON(this, json))
     }
 
     public getStudySets() : Promise<StudySmarterStudySet[]> {

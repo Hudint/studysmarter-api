@@ -5,9 +5,9 @@ export default class StudySmarterAccount {
     constructor(id: number, token: string);
     get id(): number;
     get token(): string;
-    fetch(url: string, RequestInit: RequestInit, contentType?: string): Promise<any>;
+    fetch(url: string, RequestInit: RequestInit, setContentType?: boolean): Promise<any>;
     changePassword(newPassword: string): Promise<any>;
-    createStudySet(name: string, color: SetColor, isPublic: boolean): Promise<any>;
+    createStudySet(name: string, color: SetColor, isPublic: boolean): Promise<StudySmarterStudySet>;
     getStudySets(): Promise<StudySmarterStudySet[]>;
     private static resCodeCheck;
     static fromEmailAndPassword(email: string, password: string): Promise<StudySmarterAccount>;

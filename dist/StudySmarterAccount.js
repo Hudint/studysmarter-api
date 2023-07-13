@@ -12,12 +12,12 @@ class StudySmarterAccount {
     get token() {
         return this._token;
     }
-    fetch(url, RequestInit, contentType = "application/json") {
+    fetch(url, RequestInit, setContentType = true) {
         return fetch(url, {
             ...RequestInit,
             headers: {
                 authorization: `Token ${this._token}`,
-                "Content-Type": contentType
+                ...(setContentType ? { "Content-Type": "application/json" } : {})
             }
         }).then(StudySmarterAccount.resCodeCheck);
     }
@@ -41,7 +41,7 @@ class StudySmarterAccount {
                 shared: isPublic,
                 name
             })
-        });
+        }).then(json => StudySmarterStudySet_1.default.fromJSON(this, json));
     }
     getStudySets() {
         return this.fetch(`https://prod.studysmarter.de/studysets/`, {
@@ -49,8 +49,16 @@ class StudySmarterAccount {
         })
             .then(json => json.results.map((set) => StudySmarterStudySet_1.default.fromJSON(this, set)));
     }
-    static resCodeCheck(res) {
-        return res.status === 429 ? Promise.reject("Too many requests") : res.json();
+    static async resCodeCheck(res) {
+        if (String(res.status).startsWith("2")) {
+            return await res.json();
+        }
+        else {
+            return Promise.reject(JSON.stringify({
+                status: res.status,
+                response: await res.text()
+            }));
+        }
     }
     static fromEmailAndPassword(email, password) {
         return fetch("https://prod.studysmarter.de/api-token-auth/", {
