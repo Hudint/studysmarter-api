@@ -11,7 +11,7 @@ const StudySmarterAccount_1 = require("./StudySmarterAccount");
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 const Utils_1 = require("./Utils");
 commander_1.program.version('0.0.1')
-    .name("study-smarter-cli")
+    .name("studysmarter-api")
     .description("A CLI for a StudySmarter-Api-Wrapper")
     .addHelpText("before", chalk.blue(figlet.textSync('StudySmarter CLI', { horizontalLayout: 'default' })))
     .argument("<email>", "The Email of the StudySmarter Account")

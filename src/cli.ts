@@ -12,7 +12,7 @@ import Utils from "./Utils";
 
 
 program.version('0.0.1')
-    .name("study-smarter-cli")
+    .name("studysmarter-api")
     .description("A CLI for a StudySmarter-Api-Wrapper")
     .addHelpText("before", chalk.blue(figlet.textSync('StudySmarter CLI', {horizontalLayout: 'default'})))
     .argument("<email>", "The Email of the StudySmarter Account")

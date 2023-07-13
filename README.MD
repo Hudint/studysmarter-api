@@ -11,7 +11,7 @@ Help:
 npx studysmarter-api -h
 ```
 ```
-Usage: study-smarter-cli [options] <email> <password>
+Usage: studysmarter-api [options] <email> <password>
 
 A CLI for a StudySmarter-Api-Wrapper
 
