@@ -18,16 +18,18 @@ commander_1.program.version('0.0.1')
     .argument("<password>", "The Password of the StudySmarter Account")
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
     .addOption(new commander_1.Option("-c, --color <color>", "Select color")
-    .default(StudySmarterStudySet_1.SetColor.Purple)
     .choices(Object.keys(StudySmarterStudySet_1.SetColor))
     .argParser(Utils_1.default.parseColor))
     .option("-sh, --share", "Select shared / isPublic", false)
+    .option("-n, --name <name>", "Set temp name (e.g. for modify)")
     .option("-fs, --fetch-sets", "Fetches all StudySmarter Sets and prints them to the console")
     .option("-sn, --select-set-by-name <name>", "Selects a StudySmarter Set by name")
     .option("-s, --select-set <id>", "Selects a StudySmarter Set by id")
     .option("-ps, --print-set", "Prints the selected StudySmarter Set to the console")
     .option("-a, --add-flashcard <text>", "Adds a new Flashcard to a StudySmarter Set, front and back are seperated via |", Utils_1.default.collectOption)
     .option("-i, --import-sets <path>", "Imports all decks from a 'apkg' File to StudySmarter")
+    .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
+    .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
     .option("-d, --delete-set", "Deletes the selected StudySmarter Set")
     .option("--delete-all-sets", "Deletes all StudySmarter Sets")
     .option("-pa, --print-account", "Prints the StudySmarter Account to the console")
@@ -45,6 +47,7 @@ function printSuccess(message) {
 }
 printVerbose("Options:", options);
 async function run(email, password) {
+    var _a;
     printVerbose("Username:", options, "Password:", password);
     const account = await StudySmarterAccount_1.default.fromEmailAndPassword(email, password);
     printVerbose("Account:", account);
@@ -57,7 +60,7 @@ async function run(email, password) {
         console.table(sets.map(s => ({ ...s, _account: "Irrlevant" })));
     }
     if (options.createSet) {
-        const set = await account.createStudySet(options.createSet, options.color, options.share);
+        const set = await account.createStudySet(options.createSet, (_a = options.color) !== null && _a !== void 0 ? _a : StudySmarterStudySet_1.SetColor.Purple, options.share);
         printVerbose("Created:", set);
         printSuccess(`Created Set '${set.name}' with id ${set.id} in color ${StudySmarterStudySet_1.SetColor[set.color]}`);
         selectedSet = set;
@@ -71,6 +74,7 @@ async function run(email, password) {
     }
     if (options.selectSet) {
         sets = sets || await account.getStudySets();
+        printVerbose("Sets:", sets);
         selectedSet = sets.find(s => s.id == options.selectSet);
         printVerbose("Selected via Id:", selectedSet);
         if (!selectedSet)
@@ -89,6 +93,12 @@ async function run(email, password) {
             printSuccess(`Added Flashcard With Front: '${front}' Back: '${back}' to set '${selectedSet.name}'`);
         }
     }
+    if (options.modifySet) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        await selectedSet.modify(options.name, options.color, options.share);
+        printSuccess(`Modified Set '${selectedSet.name}'`);
+    }
     if (options.deleteSet) {
         if (!selectedSet)
             throw new Error("No set selected");
@@ -106,6 +116,25 @@ async function run(email, password) {
             printSuccess(`Deleted Set '${set.name}' : ${set.id}`);
         }
         progress.stop();
+    }
+    if (options.importCards) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        const ankiResult = await Utils_1.default.convertFromAnki(path.join(process.cwd(), options.importCards));
+        const cards = ankiResult.decks.flatMap(d => d.cards);
+        const images = ankiResult.imagePaths.map(({ name, path }) => ({
+            name,
+            image_file: new Blob([fs.readFileSync(path)])
+        }));
+        printSuccess(`Found ${cards.length} cards in ${options.importSets}`);
+        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
+        progress.start(cards.length, 0);
+        for (const card of cards) {
+            await selectedSet.addFlashCard(card.front, card.back, images);
+            progress.increment();
+        }
+        progress.stop();
+        fs.rmSync(ankiResult.outFolder, { recursive: true });
     }
     if (options.importSets) {
         const ankiResult = await Utils_1.default.convertFromAnki(path.join(process.cwd(), options.importSets));

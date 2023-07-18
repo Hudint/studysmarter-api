@@ -20,16 +20,18 @@ program.version('0.0.1')
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
     .addOption(
         new Option("-c, --color <color>", "Select color")
-            .default(SetColor.Purple)
             .choices(Object.keys(SetColor))
             .argParser(Utils.parseColor))
     .option("-sh, --share", "Select shared / isPublic", false)
+    .option("-n, --name <name>", "Set temp name (e.g. for modify)")
     .option("-fs, --fetch-sets", "Fetches all StudySmarter Sets and prints them to the console")
     .option("-sn, --select-set-by-name <name>", "Selects a StudySmarter Set by name")
     .option("-s, --select-set <id>", "Selects a StudySmarter Set by id")
     .option("-ps, --print-set", "Prints the selected StudySmarter Set to the console")
     .option("-a, --add-flashcard <text>", "Adds a new Flashcard to a StudySmarter Set, front and back are seperated via |", Utils.collectOption)
     .option("-i, --import-sets <path>", "Imports all decks from a 'apkg' File to StudySmarter")
+    .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
+    .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
     .option("-d, --delete-set", "Deletes the selected StudySmarter Set")
     .option("--delete-all-sets", "Deletes all StudySmarter Sets")
     .option("-pa, --print-account", "Prints the StudySmarter Account to the console")
@@ -68,7 +70,7 @@ async function run(email, password) {
     }
 
     if (options.createSet) {
-        const set = await account.createStudySet(options.createSet, options.color, options.share);
+        const set = await account.createStudySet(options.createSet, options.color ?? SetColor.Purple, options.share);
         printVerbose("Created:", set)
         printSuccess(`Created Set '${set.name}' with id ${set.id} in color ${SetColor[set.color]}`);
         selectedSet = set;
@@ -83,6 +85,7 @@ async function run(email, password) {
 
     if (options.selectSet) {
         sets = sets || await account.getStudySets();
+        printVerbose("Sets:", sets)
         selectedSet = sets.find(s => s.id == options.selectSet);
         printVerbose("Selected via Id:", selectedSet);
         if (!selectedSet) throw new Error(`Could not find set with id ${options.selectSet}`);
@@ -100,6 +103,12 @@ async function run(email, password) {
             await selectedSet.addFlashCard(front, back);
             printSuccess(`Added Flashcard With Front: '${front}' Back: '${back}' to set '${selectedSet.name}'`);
         }
+    }
+
+    if(options.modifySet) {
+        if (!selectedSet) throw new Error("No set selected");
+        await selectedSet.modify(options.name, options.color, options.share);
+        printSuccess(`Modified Set '${selectedSet.name}'`);
     }
 
     if (options.deleteSet) {
@@ -121,6 +130,27 @@ async function run(email, password) {
             printSuccess(`Deleted Set '${set.name}' : ${set.id}`);
         }
         progress.stop();
+    }
+
+    if (options.importCards) {
+        if(!selectedSet) throw new Error("No set selected")
+        const ankiResult = await Utils.convertFromAnki(path.join(process.cwd(), options.importCards))
+        const cards = ankiResult.decks.flatMap(d => d.cards);
+        const images = ankiResult.imagePaths.map(({name, path}) => ({
+            name,
+            image_file: new Blob([fs.readFileSync(path)])
+        }))
+
+        printSuccess(`Found ${cards.length} cards in ${options.importSets}`);
+
+        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
+        progress.start(cards.length, 0);
+        for (const card of cards) {
+            await selectedSet.addFlashCard(card.front, card.back, images);
+            progress.increment();
+        }
+        progress.stop();
+        fs.rmSync(ankiResult.outFolder, {recursive: true})
     }
 
     if (options.importSets) {

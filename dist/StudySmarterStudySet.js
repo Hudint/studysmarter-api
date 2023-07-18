@@ -12,8 +12,7 @@ var SetColor;
     SetColor[SetColor["Orange"] = 5] = "Orange";
     SetColor[SetColor["Green"] = 6] = "Green";
     SetColor[SetColor["Violet"] = 7] = "Violet";
-})(SetColor || (SetColor = {}));
-exports.SetColor = SetColor;
+})(SetColor || (exports.SetColor = SetColor = {}));
 class StudySmarterStudySet {
     constructor(account, id, name, color, creator_id, isShared) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, creator_id, isShared });
@@ -47,6 +46,21 @@ class StudySmarterStudySet {
     async delete() {
         return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/`, {
             method: "DELETE"
+        });
+    }
+    modify(name, color, isPublic) {
+        console.log(name, color, isPublic);
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                colorId: color !== null && color !== void 0 ? color : this._color,
+                shared: isPublic !== null && isPublic !== void 0 ? isPublic : this._isShared,
+                name: name !== null && name !== void 0 ? name : this._name
+            })
+        }).then(({ name, colorId, shared }) => {
+            this._name = name;
+            this._color = colorId;
+            this._isShared = shared;
         });
     }
     async addFlashCard(question, answer, images = []) {

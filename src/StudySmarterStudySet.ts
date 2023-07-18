@@ -38,10 +38,10 @@ type ImageEntry = {
 export default class StudySmarterStudySet {
     private readonly _account: StudySmarterAccount;
     private readonly _id: number;
-    private readonly _name: string;
-    private readonly _color: SetColor;
     private readonly _creator_id: number;
-    private readonly _isShared: boolean;
+    private _name: string;
+    private _color: SetColor;
+    private _isShared: boolean;
 
 
     constructor(account: StudySmarterAccount, id: number, name: string, color: SetColor, creator_id: number, isShared: boolean) {
@@ -85,6 +85,22 @@ export default class StudySmarterStudySet {
     async delete() {
         return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/`, {
             method: "DELETE"
+        })
+    }
+
+    modify(name?: string, color?: SetColor, isPublic?: boolean) {
+        console.log(name, color, isPublic)
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                colorId: color ?? this._color,
+                shared: isPublic ?? this._isShared,
+                name: name ?? this._name
+            })
+        }).then(({name, colorId, shared}) => {
+            this._name = name;
+            this._color = colorId;
+            this._isShared = shared;
         })
     }
 
