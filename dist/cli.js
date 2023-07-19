@@ -10,12 +10,13 @@ const cliProgress = require("cli-progress");
 const StudySmarterAccount_1 = require("./StudySmarterAccount");
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 const Utils_1 = require("./Utils");
+const DataStorage_1 = require("./DataStorage");
 commander_1.program.version('0.0.1')
     .name("studysmarter-api")
     .description("A CLI for a StudySmarter-Api-Wrapper")
     .addHelpText("before", chalk.blue(figlet.textSync('StudySmarter CLI', { horizontalLayout: 'default' })))
-    .argument("<email>", "The Email of the StudySmarter Account")
-    .argument("<password>", "The Password of the StudySmarter Account")
+    .option("-l, --login <email:password>", "Login to StudySmarter with your credentials seperated with : (e.g. -l example@test.de:password)")
+    .option("-lo, --logout", "Logout from StudySmarter")
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
     .addOption(new commander_1.Option("-c, --color <color>", "Select color")
     .choices(Object.keys(StudySmarterStudySet_1.SetColor))
@@ -36,7 +37,7 @@ commander_1.program.version('0.0.1')
     .option("-v, --verbose", "Prints more information to the console");
 const options = commander_1.program.opts();
 commander_1.program
-    .action((email, password) => run(email, password).catch(e => console.error(chalk.red(e))))
+    .action(() => run().catch(e => console.error(chalk.red(e))))
     .parse(process.argv);
 function printVerbose(...args) {
     if (options.verbose)
@@ -46,10 +47,25 @@ function printSuccess(message) {
     console.log(chalk.green(message));
 }
 printVerbose("Options:", options);
-async function run(email, password) {
+async function run() {
     var _a;
-    printVerbose("Username:", options, "Password:", password);
-    const account = await StudySmarterAccount_1.default.fromEmailAndPassword(email, password);
+    let account;
+    if (options.login) {
+        const { 1: email, 2: password } = options.login.match(/^([^:]+):(.*)$/);
+        printVerbose("Email:", email, "Password:", password);
+        if (!email || !password)
+            throw new Error("Please provide a valid email and password seperated by ':'");
+        account = await StudySmarterAccount_1.default.fromEmailAndPassword(email, password);
+        DataStorage_1.default.set("account", account);
+        printSuccess("Logged in successfully as " + email);
+    }
+    else {
+        const savedAcc = DataStorage_1.default.get("account");
+        if (!savedAcc)
+            throw new Error("No login provided and no account saved");
+        account = new StudySmarterAccount_1.default(savedAcc._id, savedAcc._token);
+        printSuccess("Logged in successfully as id " + account.id);
+    }
     printVerbose("Account:", account);
     if (options.printAccount)
         console.table([account]);
@@ -154,5 +170,9 @@ async function run(email, password) {
         }
         progress.stop();
         fs.rmSync(ankiResult.outFolder, { recursive: true });
+    }
+    if (options.logout) {
+        DataStorage_1.default.set("account", undefined);
+        printSuccess("Logged out");
     }
 }
