@@ -31,16 +31,18 @@ type ImageEntry = {
 export default class StudySmarterStudySet {
     private readonly _account;
     private readonly _id;
-    private readonly _creator_id;
+    private readonly _creator_id?;
     private _name;
     private _color;
     private _isShared;
-    constructor(account: StudySmarterAccount, id: number, name: string, color: SetColor, creator_id: number, isShared: boolean);
+    private _published_at?;
+    constructor(account: StudySmarterAccount, id: number, name: string, color: SetColor, creator_id: number, isShared: boolean, published_at?: string);
     get id(): number;
     get name(): string;
     get color(): SetColor;
     get creator_id(): number;
     get isShared(): boolean;
+    get published_at(): string;
     getFlashCards(): Promise<any>;
     delete(): Promise<Response>;
     modify(name?: string, color?: SetColor, isPublic?: boolean): Promise<void>;

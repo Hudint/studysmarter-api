@@ -56,11 +56,16 @@ export default class StudySmarterAccount {
         }).then(json => StudySmarterStudySet.fromJSON(this, json))
     }
 
-    public getStudySets() : Promise<StudySmarterStudySet[]> {
+    public getStudySets(verbose: boolean = false) : Promise<StudySmarterStudySet[]> {
         return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "GET",
         })
-            .then(json => json.results.map((set: any) => StudySmarterStudySet.fromJSON(this, set)))
+            .then(json => json.results.map((set: any) => {
+                if(verbose) {
+                    console.log(set)
+                }
+                return StudySmarterStudySet.fromJSON(this, set)
+            }))
     }
 
     private static async validateResponse(res: Response) {

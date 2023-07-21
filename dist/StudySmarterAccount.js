@@ -46,11 +46,16 @@ class StudySmarterAccount {
             })
         }).then(json => StudySmarterStudySet_1.default.fromJSON(this, json));
     }
-    getStudySets() {
+    getStudySets(verbose = false) {
         return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "GET",
         })
-            .then(json => json.results.map((set) => StudySmarterStudySet_1.default.fromJSON(this, set)));
+            .then(json => json.results.map((set) => {
+            if (verbose) {
+                console.log(set);
+            }
+            return StudySmarterStudySet_1.default.fromJSON(this, set);
+        }));
     }
     static async validateResponse(res) {
         if (String(res.status).startsWith("2")) {

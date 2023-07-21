@@ -38,14 +38,15 @@ type ImageEntry = {
 export default class StudySmarterStudySet {
     private readonly _account: StudySmarterAccount;
     private readonly _id: number;
-    private readonly _creator_id: number;
+    private readonly _creator_id?: number;
     private _name: string;
     private _color: SetColor;
     private _isShared: boolean;
+    private _published_at?: string;
 
 
-    constructor(account: StudySmarterAccount, id: number, name: string, color: SetColor, creator_id: number, isShared: boolean) {
-        Utils.checkParamsAreSet({account: account, id, name, color, creator_id, isShared});
+    constructor(account: StudySmarterAccount, id: number, name: string, color: SetColor, creator_id: number, isShared: boolean, published_at?: string) {
+        Utils.checkParamsAreSet({account: account, id, name, color, isShared});
 
         this._account = account;
         this._id = id;
@@ -74,6 +75,10 @@ export default class StudySmarterStudySet {
 
     get isShared(): boolean {
         return this._isShared;
+    }
+
+    get published_at(): string {
+        return this._published_at;
     }
 
     getFlashCards() {
@@ -155,7 +160,7 @@ export default class StudySmarterStudySet {
     }
 
     public static fromJSON(account: StudySmarterAccount, json: any): StudySmarterStudySet {
-        return new StudySmarterStudySet(account, json["id"], json["name"], json["colorId"], json["creator_id"], json["shared"]);
+        return new StudySmarterStudySet(account, json["id"], json["name"], json["colorId"], json["creator_id"], json["shared"], json["published_at"]);
     }
 }
 

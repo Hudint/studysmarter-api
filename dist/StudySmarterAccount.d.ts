@@ -9,7 +9,7 @@ export default class StudySmarterAccount {
     fetch(url: string, RequestInit: RequestInit, setContentType?: boolean): Promise<Response>;
     changePassword(newPassword: string): Promise<any>;
     createStudySet(name: string, color: SetColor, isPublic: boolean): Promise<StudySmarterStudySet>;
-    getStudySets(): Promise<StudySmarterStudySet[]>;
+    getStudySets(verbose?: boolean): Promise<StudySmarterStudySet[]>;
     private static validateResponse;
     static fromEmailAndPassword(email: string, password: string): Promise<StudySmarterAccount>;
 }

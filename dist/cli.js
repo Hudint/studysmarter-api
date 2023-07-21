@@ -72,7 +72,7 @@ async function run() {
     let selectedSet;
     let sets;
     if (options.fetchSets) {
-        sets = sets || await account.getStudySets();
+        sets = sets || await account.getStudySets(options.verbose);
         console.table(sets.map(s => ({ ...s, _account: "Irrlevant" })));
     }
     if (options.createSet) {

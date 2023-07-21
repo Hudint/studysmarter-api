@@ -79,7 +79,7 @@ async function run() {
     let sets: StudySmarterStudySet[];
 
     if (options.fetchSets) {
-        sets = sets || await account.getStudySets();
+        sets = sets || await account.getStudySets(options.verbose);
         console.table(sets.map(s => ({...s, _account: "Irrlevant"})));
     }
 
@@ -89,7 +89,6 @@ async function run() {
         printSuccess(`Created Set '${set.name}' with id ${set.id} in color ${SetColor[set.color]}`);
         selectedSet = set;
     }
-
     if (options.selectSetByName) {
         sets = sets || await account.getStudySets();
         selectedSet = sets.find(s => s.name == options.selectSetByName);
