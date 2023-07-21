@@ -73,7 +73,7 @@ async function run() {
     let sets;
     if (options.fetchSets) {
         sets = sets || await account.getStudySets(options.verbose);
-        console.table(sets.map(s => ({ ...s, _account: "Irrlevant" })));
+        console.table(sets.map(s => Utils_1.default.getObjectWithoutKeys(s, ["_account"])));
     }
     if (options.createSet) {
         const set = await account.createStudySet(options.createSet, (_a = options.color) !== null && _a !== void 0 ? _a : StudySmarterStudySet_1.SetColor.Purple, options.share);

@@ -80,7 +80,7 @@ async function run() {
 
     if (options.fetchSets) {
         sets = sets || await account.getStudySets(options.verbose);
-        console.table(sets.map(s => ({...s, _account: "Irrlevant"})));
+        console.table(sets.map(s => Utils.getObjectWithoutKeys(s, ["_account"])));
     }
 
     if (options.createSet) {

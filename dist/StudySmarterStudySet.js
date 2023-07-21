@@ -14,14 +14,17 @@ var SetColor;
     SetColor[SetColor["Violet"] = 7] = "Violet";
 })(SetColor || (exports.SetColor = SetColor = {}));
 class StudySmarterStudySet {
-    constructor(account, id, name, color, creator_id, isShared, published_at) {
+    constructor(account, id, creator_id, name, color, isShared, created, published_at, last_used) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, isShared });
         this._account = account;
         this._id = id;
+        this._creator_id = creator_id;
         this._name = name;
         this._color = color;
-        this._creator_id = creator_id;
         this._isShared = isShared;
+        this._created = created;
+        this._published_at = published_at;
+        this._last_used = last_used;
     }
     get id() {
         return this._id;
@@ -40,6 +43,12 @@ class StudySmarterStudySet {
     }
     get published_at() {
         return this._published_at;
+    }
+    get created() {
+        return this._created;
+    }
+    get last_used() {
+        return this._last_used;
     }
     getFlashCards() {
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
@@ -111,7 +120,7 @@ class StudySmarterStudySet {
         }, false);
     }
     static fromJSON(account, json) {
-        return new StudySmarterStudySet(account, json["id"], json["name"], json["colorId"], json["creator_id"], json["shared"], json["published_at"]);
+        return new StudySmarterStudySet(account, json.id, json.creator_id, json.name, json.colorId, json.shared, Utils_1.default.nullableDateFormat(json.created), Utils_1.default.nullableDateFormat(json.published_at), Utils_1.default.nullableDateFormat(json.last_used));
     }
 }
 exports.default = StudySmarterStudySet;

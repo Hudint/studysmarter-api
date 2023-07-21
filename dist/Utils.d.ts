@@ -17,7 +17,13 @@ type AnkiResult = {
     outFolder: string;
 };
 export default class Utils {
+    static readonly DATE_FORMATS: {
+        DATETIME: string;
+    };
     private constructor();
+    static nullableMap<T, R>(obj: T, fn: (o: T) => R): R;
+    static nullableDateFormat(input: string): string;
+    static getObjectWithoutKeys(obj: any, keys: string[]): any;
     static parseColor(color: string): SetColor;
     static collectOption<T>(value: T, prev: T[]): T[];
     static checkParamsAreSet(params: any): void;

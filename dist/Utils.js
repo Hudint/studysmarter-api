@@ -5,8 +5,20 @@ const fs = require("fs");
 const Database = require("better-sqlite3");
 const path = require("path");
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
+const moment = require("moment");
 class Utils {
     constructor() {
+    }
+    static nullableMap(obj, fn) {
+        if (obj === null || obj === undefined)
+            return undefined;
+        return fn(obj);
+    }
+    static nullableDateFormat(input) {
+        return Utils.nullableMap(input, (i) => moment(i).format(Utils.DATE_FORMATS.DATETIME));
+    }
+    static getObjectWithoutKeys(obj, keys) {
+        return Object.fromEntries(Object.entries(obj).filter(([k, v]) => !keys.includes(k)));
     }
     static parseColor(color) {
         let c;
@@ -85,4 +97,7 @@ class Utils {
         };
     }
 }
+Utils.DATE_FORMATS = {
+    DATETIME: "DD.MM.YYYY hh:mm",
+};
 exports.default = Utils;

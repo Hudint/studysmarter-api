@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as Database from 'better-sqlite3';
 import * as path from "path";
 import {SetColor} from "./StudySmarterStudySet";
+import moment = require("moment");
 
 type Card = {
     front: string,
@@ -22,7 +23,24 @@ type AnkiResult = {
 }
 
 export default class Utils {
+    public static readonly DATE_FORMATS = {
+        DATETIME: "DD.MM.YYYY hh:mm",
+    }
+
     private constructor() {
+    }
+
+    public static nullableMap<T, R>(obj: T, fn: (o: T) => R){
+        if(obj === null || obj === undefined) return undefined;
+        return fn(obj);
+    }
+
+    public static nullableDateFormat(input: string) {
+        return Utils.nullableMap(input, (i) => moment(i).format(Utils.DATE_FORMATS.DATETIME));
+    }
+
+    public static getObjectWithoutKeys(obj: any, keys: string[]): any {
+        return Object.fromEntries(Object.entries(obj).filter(([k, v]) => !keys.includes(k)));
     }
 
     public static parseColor(color: string): SetColor {

@@ -1,5 +1,6 @@
 import StudySmarterAccount from "./StudySmarterAccount";
 import Utils from "./Utils";
+import moment = require("moment");
 
 enum SetColor {
     Red = 0,
@@ -42,20 +43,23 @@ export default class StudySmarterStudySet {
     private _name: string;
     private _color: SetColor;
     private _isShared: boolean;
+    private _created?: string;
     private _published_at?: string;
+    private _last_used?: string;
 
 
-    constructor(account: StudySmarterAccount, id: number, name: string, color: SetColor, creator_id: number, isShared: boolean, published_at?: string) {
+    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: SetColor, isShared: boolean, created: string, published_at: string, last_used: string) {
         Utils.checkParamsAreSet({account: account, id, name, color, isShared});
-
         this._account = account;
         this._id = id;
+        this._creator_id = creator_id;
         this._name = name;
         this._color = color;
-        this._creator_id = creator_id;
         this._isShared = isShared;
+        this._created = created;
+        this._published_at = published_at;
+        this._last_used = last_used;
     }
-
 
     get id(): number {
         return this._id;
@@ -79,6 +83,14 @@ export default class StudySmarterStudySet {
 
     get published_at(): string {
         return this._published_at;
+    }
+
+    get created(): string {
+        return this._created;
+    }
+
+    get last_used(): string {
+        return this._last_used;
     }
 
     getFlashCards() {
@@ -111,7 +123,7 @@ export default class StudySmarterStudySet {
 
     async addFlashCard(question: string, answer: string, images: ImageEntry[] = []) {
         // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
-        let imageObjects: {[name: string]: FlashcardImage} = {};
+        let imageObjects: { [name: string]: FlashcardImage } = {};
 
         const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
         const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
@@ -136,10 +148,12 @@ export default class StudySmarterStudySet {
         })
     }
 
-    private async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {[name: string]: FlashcardImage}) {
+    private async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
+        [name: string]: FlashcardImage
+    }) {
         let result = text;
 
-        for(const match of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
+        for (const match of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
             const imageEntry = images.find(i => i.name === match[1]);
             const uploaded = uploadedImages[imageEntry.name] || await this.uploadImage(imageEntry);
             uploadedImages[imageEntry.name] = uploaded;
@@ -160,7 +174,17 @@ export default class StudySmarterStudySet {
     }
 
     public static fromJSON(account: StudySmarterAccount, json: any): StudySmarterStudySet {
-        return new StudySmarterStudySet(account, json["id"], json["name"], json["colorId"], json["creator_id"], json["shared"], json["published_at"]);
+        return new StudySmarterStudySet(
+            account,
+            json.id,
+            json.creator_id,
+            json.name,
+            json.colorId,
+            json.shared,
+            Utils.nullableDateFormat(json.created),
+            Utils.nullableDateFormat(json.published_at),
+            Utils.nullableDateFormat(json.last_used)
+        )
     }
 }
 
