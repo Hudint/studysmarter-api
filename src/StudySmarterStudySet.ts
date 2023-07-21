@@ -43,12 +43,13 @@ export default class StudySmarterStudySet {
     private _name: string;
     private _color: SetColor;
     private _isShared: boolean;
+    private _flashcard_count: number;
     private _created?: string;
     private _published_at?: string;
     private _last_used?: string;
 
 
-    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: SetColor, isShared: boolean, created: string, published_at: string, last_used: string) {
+    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: SetColor, isShared: boolean, flashcard_count: number, created?: string, published_at?: string, last_used?: string) {
         Utils.checkParamsAreSet({account: account, id, name, color, isShared});
         this._account = account;
         this._id = id;
@@ -56,6 +57,7 @@ export default class StudySmarterStudySet {
         this._name = name;
         this._color = color;
         this._isShared = isShared;
+        this._flashcard_count = flashcard_count;
         this._created = created;
         this._published_at = published_at;
         this._last_used = last_used;
@@ -79,6 +81,10 @@ export default class StudySmarterStudySet {
 
     get isShared(): boolean {
         return this._isShared;
+    }
+
+    get flashcard_count(): number {
+        return this._flashcard_count;
     }
 
     get published_at(): string {
@@ -145,7 +151,7 @@ export default class StudySmarterStudySet {
                 "hint_html": [],
                 "solution_html": ""
             })
-        })
+        }).then(() => this._flashcard_count++)
     }
 
     private async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
@@ -181,6 +187,7 @@ export default class StudySmarterStudySet {
             json.name,
             json.colorId,
             json.shared,
+            json.flashcard_count,
             Utils.nullableDateFormat(json.created),
             Utils.nullableDateFormat(json.published_at),
             Utils.nullableDateFormat(json.last_used)

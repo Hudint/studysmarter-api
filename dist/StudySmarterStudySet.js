@@ -14,7 +14,7 @@ var SetColor;
     SetColor[SetColor["Violet"] = 7] = "Violet";
 })(SetColor || (exports.SetColor = SetColor = {}));
 class StudySmarterStudySet {
-    constructor(account, id, creator_id, name, color, isShared, created, published_at, last_used) {
+    constructor(account, id, creator_id, name, color, isShared, flashcard_count, created, published_at, last_used) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, isShared });
         this._account = account;
         this._id = id;
@@ -22,6 +22,7 @@ class StudySmarterStudySet {
         this._name = name;
         this._color = color;
         this._isShared = isShared;
+        this._flashcard_count = flashcard_count;
         this._created = created;
         this._published_at = published_at;
         this._last_used = last_used;
@@ -40,6 +41,9 @@ class StudySmarterStudySet {
     }
     get isShared() {
         return this._isShared;
+    }
+    get flashcard_count() {
+        return this._flashcard_count;
     }
     get published_at() {
         return this._published_at;
@@ -97,7 +101,7 @@ class StudySmarterStudySet {
                 "hint_html": [],
                 "solution_html": ""
             })
-        });
+        }).then(() => this._flashcard_count++);
     }
     async replaceImageTags(text, images, uploadedImages) {
         let result = text;
@@ -120,7 +124,7 @@ class StudySmarterStudySet {
         }, false);
     }
     static fromJSON(account, json) {
-        return new StudySmarterStudySet(account, json.id, json.creator_id, json.name, json.colorId, json.shared, Utils_1.default.nullableDateFormat(json.created), Utils_1.default.nullableDateFormat(json.published_at), Utils_1.default.nullableDateFormat(json.last_used));
+        return new StudySmarterStudySet(account, json.id, json.creator_id, json.name, json.colorId, json.shared, json.flashcard_count, Utils_1.default.nullableDateFormat(json.created), Utils_1.default.nullableDateFormat(json.published_at), Utils_1.default.nullableDateFormat(json.last_used));
     }
 }
 exports.default = StudySmarterStudySet;
