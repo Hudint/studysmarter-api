@@ -1,4 +1,5 @@
 import StudySmarterAccount from "./StudySmarterAccount";
+import StudySmarterFlashCard from "./StudySmarterFlashCard";
 declare enum SetColor {
     Red = 0,
     Blue = 1,
@@ -23,7 +24,7 @@ type FlashcardImage = {
     "localID": number;
     "flashcardinfo"?: number;
 };
-type ImageEntry = {
+export type ImageEntry = {
     "name": string;
     "image_string"?: string;
     "image_file"?: Blob;
@@ -49,9 +50,10 @@ export default class StudySmarterStudySet {
     get published_at(): string;
     get created(): string;
     get last_used(): string;
-    getFlashCards(): Promise<any>;
+    getFlashCards(): Promise<StudySmarterFlashCard[]>;
     delete(): Promise<Response>;
     modify(name?: string, color?: SetColor, isPublic?: boolean): Promise<void>;
+    addFlashCardClone(card: StudySmarterFlashCard): Promise<number>;
     addFlashCard(question: string, answer: string, images?: ImageEntry[]): Promise<number>;
     private replaceImageTags;
     private uploadImage;

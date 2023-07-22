@@ -17,7 +17,7 @@ A CLI for a StudySmarter-Api-Wrapper
 
 Options:
   -V, --version                     output the version number
-  -l, --login <email:password>      Login to StudySmarter with your credentials seperated with : (e.g. -l mail:password)
+  -l, --login <email:password>      Login to StudySmarter with your credentials seperated with : (e.g. -l example@test.de:password)
   -lo, --logout                     Logout from StudySmarter
   -cs, --create-set <name>          Creates a new StudySmarter Set
   -c, --color <color>               Select color (choices: "0", "1", "2", "3", "4", "5", "6", "7", "Red", "Blue", "Mint", "Purple", "Teal", "Orange", "Green", "Violet")
@@ -28,6 +28,7 @@ Options:
   -s, --select-set <id>             Selects a StudySmarter Set by id
   -ps, --print-set                  Prints the selected StudySmarter Set to the console
   -a, --add-flashcard <text>        Adds a new Flashcard to a StudySmarter Set, front and back are seperated via |
+  -cc, --copy-cards <deck-id>       Copies all cards from StudySmarter Set to the current selected Set
   -i, --import-sets <path>          Imports all decks from a 'apkg' File to StudySmarter
   -ic, --import-cards <path>        Imports all cards from a 'apkg' File to StudySmarter
   -m, --modify-set                  Modifies the selected StudySmarter Set

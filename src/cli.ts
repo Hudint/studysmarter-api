@@ -30,6 +30,7 @@ program.version('0.0.1')
     .option("-s, --select-set <id>", "Selects a StudySmarter Set by id")
     .option("-ps, --print-set", "Prints the selected StudySmarter Set to the console")
     .option("-a, --add-flashcard <text>", "Adds a new Flashcard to a StudySmarter Set, front and back are seperated via |", Utils.collectOption)
+    .option("-cc, --copy-cards <deck-id>", "Copies all cards from StudySmarter Set to the current selected Set")
     .option("-i, --import-sets <path>", "Imports all decks from a 'apkg' File to StudySmarter")
     .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
     .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
@@ -122,6 +123,21 @@ async function run() {
         if (!selectedSet) throw new Error("No set selected");
         await selectedSet.modify(options.name, options.color, options.share);
         printSuccess(`Modified Set '${selectedSet.name}'`);
+    }
+
+    if(options.copyCards) {
+        if (!selectedSet) throw new Error("No set selected");
+        const otherSet = sets.find(s => s.id == options.copyCards);
+        if(!otherSet) throw new Error(`Could not find deck with id ${options.copyCards}`);
+        const cards = await otherSet.getFlashCards();
+        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
+        progress.start(cards.length, 0);
+        for(const card of cards) {
+            await selectedSet.addFlashCardClone(card);
+            progress.increment();
+        }
+        progress.stop();
+        printSuccess(`Copied Cards from '${otherSet.name}' to '${selectedSet.name}'`);
     }
 
     if (options.deleteSet) {

@@ -1,6 +1,7 @@
 import StudySmarterAccount from "./StudySmarterAccount";
 import Utils from "./Utils";
 import moment = require("moment");
+import StudySmarterFlashCard from "./StudySmarterFlashCard";
 
 enum SetColor {
     Red = 0,
@@ -29,7 +30,7 @@ type FlashcardImage = {
 }
 
 
-type ImageEntry = {
+export type ImageEntry = {
     "name": string,
     "image_string"?: string,
     "image_file"?: Blob
@@ -47,7 +48,6 @@ export default class StudySmarterStudySet {
     private _created?: string;
     private _published_at?: string;
     private _last_used?: string;
-
 
     constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: SetColor, isShared: boolean, flashcard_count: number, created?: string, published_at?: string, last_used?: string) {
         Utils.checkParamsAreSet({account: account, id, name, color, isShared});
@@ -99,10 +99,12 @@ export default class StudySmarterStudySet {
         return this._last_used;
     }
 
-    getFlashCards() {
+    getFlashCards() : Promise<StudySmarterFlashCard[]> {
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
             method: "GET"
-        }).then(({results}) => results.map(r => StudySmarterStudySet.fromJSON(this._account, r)))
+        }).then(({results}) => results.map(card => {
+            return StudySmarterFlashCard.fromJSON(this._account, card)
+        }))
     }
 
     async delete() {
@@ -125,6 +127,21 @@ export default class StudySmarterStudySet {
             this._color = colorId;
             this._isShared = shared;
         })
+    }
+
+    async addFlashCardClone(card: StudySmarterFlashCard) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
+            method: "POST",
+            body: JSON.stringify({
+                "flashcard_image_ids": card.flashcard_images.map(i => i.id),
+                "tags": [],
+                "question_html": card.question_html,
+                "answer_html": card.answer_html,
+                "shared": 2,
+                "hint_html": [],
+                "solution_html": ""
+            })
+        }).then(() => this._flashcard_count++)
     }
 
     async addFlashCard(question: string, answer: string, images: ImageEntry[] = []) {

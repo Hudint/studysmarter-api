@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SetColor = void 0;
 const Utils_1 = require("./Utils");
+const StudySmarterFlashCard_1 = require("./StudySmarterFlashCard");
 var SetColor;
 (function (SetColor) {
     SetColor[SetColor["Red"] = 0] = "Red";
@@ -57,7 +58,9 @@ class StudySmarterStudySet {
     getFlashCards() {
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
             method: "GET"
-        }).then(({ results }) => results.map(r => StudySmarterStudySet.fromJSON(this._account, r)));
+        }).then(({ results }) => results.map(card => {
+            return StudySmarterFlashCard_1.default.fromJSON(this._account, card);
+        }));
     }
     async delete() {
         return this._account.fetch(`https://prod.studysmarter.de/studysets/${this._id}/`, {
@@ -78,6 +81,20 @@ class StudySmarterStudySet {
             this._color = colorId;
             this._isShared = shared;
         });
+    }
+    async addFlashCardClone(card) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
+            method: "POST",
+            body: JSON.stringify({
+                "flashcard_image_ids": card.flashcard_images.map(i => i.id),
+                "tags": [],
+                "question_html": card.question_html,
+                "answer_html": card.answer_html,
+                "shared": 2,
+                "hint_html": [],
+                "solution_html": ""
+            })
+        }).then(() => this._flashcard_count++);
     }
     async addFlashCard(question, answer, images = []) {
         // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
