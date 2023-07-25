@@ -27,11 +27,17 @@ commander_1.program.version('0.0.1')
     .option("-sn, --select-set-by-name <name>", "Selects a StudySmarter Set by name")
     .option("-s, --select-set <id>", "Selects a StudySmarter Set by id")
     .option("-ps, --print-set", "Prints the selected StudySmarter Set to the console")
+    .option("-fc, --fetch-cards", "Fetches all StudySmarter Cards from the selected Set and prints them to the console")
+    .option("-f, --front <text>", "Sets the front variable to modify flashcards")
+    .option("-b, --back <text>", "Sets the back variable to modify flashcards")
     .option("-a, --add-flashcard <text>", "Adds a new Flashcard to a StudySmarter Set, front and back are seperated via |", Utils_1.default.collectOption)
+    .option("-sc, --select-card <id>", "Selects a StudySmarter Card by id")
+    .option("-pc, --print-card", "Prints the selected StudySmarter Card to the console")
     .option("-cc, --copy-cards <deck-id>", "Copies all cards from StudySmarter Set to the current selected Set")
     .option("-i, --import-sets <path>", "Imports all decks from a 'apkg' File to StudySmarter")
     .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
     .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
+    .option("-mc, --modify-card", "Modifies the selected StudySmarter Card")
     .option("-d, --delete-set", "Deletes the selected StudySmarter Set")
     .option("--delete-all-sets", "Deletes all StudySmarter Sets")
     .option("-pa, --print-account", "Prints the StudySmarter Account to the console")
@@ -100,6 +106,21 @@ async function run() {
     if (options.printSet) {
         console.table({ ...selectedSet, _account: "Irrlevant" });
     }
+    let cards;
+    let selectedCard;
+    if (options.fetchCards) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        cards = cards !== null && cards !== void 0 ? cards : await selectedSet.getFlashCards();
+        console.table(cards
+            .map(c => ({ id: c.id, front: c.question_html.map(q => q.text), back: c.answer_html.map(q => q.text) })));
+    }
+    if (options.selectCard) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        cards = cards !== null && cards !== void 0 ? cards : await selectedSet.getFlashCards();
+        selectedCard = cards.find(c => c.id == options.selectCard);
+    }
     if (options.addFlashcard) {
         if (!selectedSet)
             throw new Error("No set selected");
@@ -109,6 +130,19 @@ async function run() {
             await selectedSet.addFlashCard(front, back);
             printSuccess(`Added Flashcard With Front: '${front}' Back: '${back}' to set '${selectedSet.name}'`);
         }
+    }
+    if (options.printCard) {
+        if (!selectedCard)
+            throw new Error("No card selected");
+        console.log({ ...selectedCard, _account: "Irrelevant" });
+    }
+    if (options.modifyCard) {
+        if (!selectedCard)
+            throw new Error("No card selected");
+        if (!options.front && !options.back)
+            throw new Error("Please provide a front and back");
+        await selectedCard.modifyText(options.front, options.back);
+        printSuccess(`Modified Card '${selectedCard.id}' with Front: '${options.front}' Back: '${options.back}'`);
     }
     if (options.modifySet) {
         if (!selectedSet)
