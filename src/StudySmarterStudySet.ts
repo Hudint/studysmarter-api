@@ -33,7 +33,7 @@ type FlashcardImage = {
 export type ImageEntry = {
     "name": string,
     "image_string"?: string,
-    "image_file"?: Blob
+    "image_blob"?: Blob
 }
 
 
@@ -130,18 +130,18 @@ export default class StudySmarterStudySet {
     }
 
     async addFlashCardClone(card: StudySmarterFlashCard) {
-        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
-            method: "POST",
-            body: JSON.stringify({
-                "flashcard_image_ids": card.flashcard_images.map(i => i.id),
-                "tags": [],
-                "question_html": card.question_html,
-                "answer_html": card.answer_html,
-                "shared": 2,
-                "hint_html": [],
-                "solution_html": ""
+        const images: ImageEntry[] = [];
+        console.log(card)
+        for (const image of card.flashcard_images) {
+            console.log(image)
+            const imageBlob = await (await this._account.fetch(image.presigned_url, {})).blob();
+            images.push({
+                name: image.presigned_url,
+                image_blob: imageBlob
             })
-        }).then(() => this._flashcard_count++)
+        }
+
+        return this.addFlashCard(card.question, card.answer, images);
     }
 
     async addFlashCard(question: string, answer: string, images: ImageEntry[] = []) {
@@ -174,10 +174,16 @@ export default class StudySmarterStudySet {
     private async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
         [name: string]: FlashcardImage
     }) {
+
+        console.log(text, images, uploadedImages);
         let result = text;
 
         for (const match of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
             const imageEntry = images.find(i => i.name === match[1]);
+            if(!imageEntry) {
+                console.log("Image not found", match[1]);
+                continue;
+            }
             const uploaded = uploadedImages[imageEntry.name] || await this.uploadImage(imageEntry);
             uploadedImages[imageEntry.name] = uploaded;
 
@@ -188,7 +194,7 @@ export default class StudySmarterStudySet {
 
     private async uploadImage(image: ImageEntry): Promise<FlashcardImage> {
         const body = new FormData();
-        body.append("image_file", image.image_file ?? await fetch(image.image_string).then(r => r.blob()));
+        body.append("image_file", image.image_blob ?? await fetch(image.image_string).then(r => r.blob()));
         body.append("localID", "" + Date.now());
         return await this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
             method: "POST",

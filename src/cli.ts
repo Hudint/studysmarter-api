@@ -163,6 +163,7 @@ async function run() {
 
     if(options.copyCards) {
         if (!selectedSet) throw new Error("No set selected");
+        sets = sets || await account.getStudySets();
         const otherSet = sets.find(s => s.id == options.copyCards);
         if(!otherSet) throw new Error(`Could not find deck with id ${options.copyCards}`);
         const cards = await otherSet.getFlashCards();

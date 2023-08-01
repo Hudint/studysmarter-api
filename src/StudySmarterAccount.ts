@@ -23,6 +23,7 @@ export default class StudySmarterAccount {
     }
 
     public fetch(url: string, RequestInit: RequestInit, setContentType: boolean = true) {
+        console.log("fetching", url)
         return fetch(url, {
             ...RequestInit,
             headers: {

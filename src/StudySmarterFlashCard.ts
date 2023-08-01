@@ -60,6 +60,13 @@ export default class StudySmarterFlashCard{
         return this._hint_html;
     }
 
+    get question(): string {
+        return this._question_html.map(part => part.text).join("");
+    }
+    get answer(): string {
+        return this._answer_html.filter(p => p.is_correct).map(part => part.text).join("");
+    }
+
     get flashcard_images(): FlashcardImage[] {
         return this._flashcard_images;
     }
