@@ -1,4 +1,5 @@
 import StudySmarterStudySet, {SetColor} from "./StudySmarterStudySet";
+import Utils from "./Utils";
 
 
 export default class StudySmarterAccount {
@@ -23,13 +24,17 @@ export default class StudySmarterAccount {
     }
 
     public fetch(url: string, RequestInit: RequestInit, setContentType: boolean = true) {
+        // For Debugging:
+        // console.log("fetching", url)
         return fetch(url, {
             ...RequestInit,
             headers: {
                 authorization: `Token ${this._token}`,
                 ...(setContentType ? {"Content-Type": "application/json"} : {})
             }
-        }).then(StudySmarterAccount.validateResponse)
+        })
+            .then(res => res.status === 504 ? Utils.sleep(10000).then(() => this.fetch(url, RequestInit, setContentType)) : res)
+            .then(StudySmarterAccount.validateResponse)
     }
 
     public changePassword(newPassword: string) {
@@ -56,12 +61,12 @@ export default class StudySmarterAccount {
         }).then(json => StudySmarterStudySet.fromJSON(this, json))
     }
 
-    public getStudySets(verbose: boolean = false) : Promise<StudySmarterStudySet[]> {
+    public getStudySets(verbose: boolean = false): Promise<StudySmarterStudySet[]> {
         return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "GET",
         })
             .then(json => json.results.map((set: any) => {
-                if(verbose) {
+                if (verbose) {
                     console.log(set)
                 }
                 return StudySmarterStudySet.fromJSON(this, set)
@@ -69,9 +74,9 @@ export default class StudySmarterAccount {
     }
 
     private static async validateResponse(res: Response) {
-        if(String(res.status).startsWith("2")) {
+        if (String(res.status).startsWith("2")) {
             return res;
-        }else {
+        } else {
             return Promise.reject(JSON.stringify({
                 status: res.status,
                 response: await res.text()

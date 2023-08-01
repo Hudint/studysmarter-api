@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
+const Utils_1 = require("./Utils");
 class StudySmarterAccount {
     constructor(id, token) {
         this._id = id;
@@ -16,13 +17,17 @@ class StudySmarterAccount {
         return this.fetch(url, RequestInit, setContentType).then(res => res.json());
     }
     fetch(url, RequestInit, setContentType = true) {
+        // For Debugging:
+        // console.log("fetching", url)
         return fetch(url, {
             ...RequestInit,
             headers: {
                 authorization: `Token ${this._token}`,
                 ...(setContentType ? { "Content-Type": "application/json" } : {})
             }
-        }).then(StudySmarterAccount.validateResponse);
+        })
+            .then(res => res.status === 504 ? Utils_1.default.sleep(10000).then(() => this.fetch(url, RequestInit, setContentType)) : res)
+            .then(StudySmarterAccount.validateResponse);
     }
     changePassword(newPassword) {
         return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {

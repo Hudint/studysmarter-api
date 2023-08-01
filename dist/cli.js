@@ -41,7 +41,8 @@ commander_1.program.version('0.0.1')
     .option("-d, --delete-set", "Deletes the selected StudySmarter Set")
     .option("--delete-all-sets", "Deletes all StudySmarter Sets")
     .option("-pa, --print-account", "Prints the StudySmarter Account to the console")
-    .option("-v, --verbose", "Prints more information to the console");
+    .option("-v, --verbose", "Prints more information to the console")
+    .addOption(new commander_1.Option("-rc, --recopy-cards <deck-id>").hideHelp());
 const options = commander_1.program.opts();
 commander_1.program
     .action(() => run().catch(e => console.error(chalk.red(e))))
@@ -55,7 +56,7 @@ function printSuccess(message) {
 }
 printVerbose("Options:", options);
 async function run() {
-    var _a;
+    var _a, _b;
     let account;
     if (options.login) {
         const { 1: email, 2: password } = options.login.match(/^([^:]+):(.*)$/);
@@ -76,6 +77,7 @@ async function run() {
     printVerbose("Account:", account);
     if (options.printAccount)
         console.table([account]);
+    const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
     let selectedSet;
     let sets;
     if (options.fetchSets) {
@@ -153,14 +155,32 @@ async function run() {
     if (options.copyCards) {
         if (!selectedSet)
             throw new Error("No set selected");
+        sets = sets || await account.getStudySets();
         const otherSet = sets.find(s => s.id == options.copyCards);
         if (!otherSet)
             throw new Error(`Could not find deck with id ${options.copyCards}`);
         const cards = await otherSet.getFlashCards();
-        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
         progress.start(cards.length, 0);
         for (const card of cards) {
             await selectedSet.addFlashCardClone(card);
+            progress.increment();
+        }
+        progress.stop();
+        printSuccess(`Copied Cards from '${otherSet.name}' to '${selectedSet.name}'`);
+    }
+    //This is just for one specific use-case
+    if (options.recopyCards) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        sets = sets || await account.getStudySets();
+        const otherSet = sets.find(s => s.id == options.recopyCards);
+        if (!otherSet)
+            throw new Error(`Could not find deck with id ${options.recopyCards}`);
+        const otherCards = await otherSet.getFlashCards();
+        const currentCards = await selectedSet.getFlashCards();
+        progress.start(currentCards.length, 0);
+        for (const card of otherCards) {
+            await ((_b = currentCards.find(c => c.question == card.question)) === null || _b === void 0 ? void 0 : _b.modifyText(card.question, card.answer));
             progress.increment();
         }
         progress.stop();
@@ -175,7 +195,6 @@ async function run() {
     if (options.deleteAllSets) {
         sets = sets || await account.getStudySets();
         sets = sets.filter(s => s.creator_id === account.id);
-        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
         progress.start(sets.length, 0);
         for (const set of sets) {
             await set.delete();
@@ -194,7 +213,6 @@ async function run() {
             image_file: new Blob([fs.readFileSync(path)])
         }));
         printSuccess(`Found ${cards.length} cards in ${options.importSets}`);
-        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
         progress.start(cards.length, 0);
         for (const card of cards) {
             await selectedSet.addFlashCard(card.front, card.back, images);
@@ -210,7 +228,6 @@ async function run() {
             image_file: new Blob([fs.readFileSync(path)])
         }));
         printSuccess(`Found ${ankiResult.decks.length} decks in ${options.importSets}`);
-        const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
         progress.start(ankiResult.decks.reduce((p, c) => p + c.cards.length, 0), 0);
         for (const deck of ankiResult.decks) {
             const re = await account.createStudySet(deck.name, StudySmarterStudySet_1.SetColor.Violet, false);

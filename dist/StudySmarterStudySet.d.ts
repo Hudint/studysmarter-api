@@ -10,7 +10,7 @@ declare enum SetColor {
     Green = 6,
     Violet = 7
 }
-type FlashcardImage = {
+declare type FlashcardImage = {
     "id": number;
     "image_string": string;
     "presigned_url": string;
@@ -24,10 +24,10 @@ type FlashcardImage = {
     "localID": number;
     "flashcardinfo"?: number;
 };
-export type ImageEntry = {
+export declare type ImageEntry = {
     "name": string;
     "image_string"?: string;
-    "image_file"?: Blob;
+    "image_blob"?: Blob;
 };
 export default class StudySmarterStudySet {
     private readonly _account;
@@ -51,11 +51,13 @@ export default class StudySmarterStudySet {
     get created(): string;
     get last_used(): string;
     getFlashCards(): Promise<StudySmarterFlashCard[]>;
-    delete(): Promise<Response>;
-    modify(name?: string, color?: SetColor, isPublic?: boolean): Promise<void>;
-    addFlashCardClone(card: StudySmarterFlashCard): Promise<number>;
-    addFlashCard(question: string, answer: string, images?: ImageEntry[]): Promise<number>;
-    private replaceImageTags;
+    delete(): Promise<any>;
+    modify(name?: string, color?: SetColor, isPublic?: boolean): any;
+    addFlashCardClone(card: StudySmarterFlashCard): Promise<any>;
+    addFlashCard(question: string, answer: string, images?: ImageEntry[]): Promise<any>;
+    replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
+        [name: string]: FlashcardImage;
+    }): Promise<string>;
     private uploadImage;
     static fromJSON(account: StudySmarterAccount, json: any): StudySmarterStudySet;
 }
