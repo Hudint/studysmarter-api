@@ -96,8 +96,14 @@ class Utils {
             outFolder
         };
     }
+    static async sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    static escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    }
 }
+exports.default = Utils;
 Utils.DATE_FORMATS = {
     DATETIME: "DD.MM.YYYY hh:mm",
 };
-exports.default = Utils;

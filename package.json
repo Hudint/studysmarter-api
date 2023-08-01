@@ -35,6 +35,7 @@
     "commander": "^11.0.0",
     "decompress": "^4.2.1",
     "figlet": "^1.6.0",
+    "html-entities": "^2.4.0",
     "moment": "^2.29.4"
   },
   "engines": {

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SetColor = void 0;
+const html_entities_1 = require("html-entities");
 const Utils_1 = require("./Utils");
 const StudySmarterFlashCard_1 = require("./StudySmarterFlashCard");
 var SetColor;
@@ -13,7 +14,8 @@ var SetColor;
     SetColor[SetColor["Orange"] = 5] = "Orange";
     SetColor[SetColor["Green"] = 6] = "Green";
     SetColor[SetColor["Violet"] = 7] = "Violet";
-})(SetColor || (exports.SetColor = SetColor = {}));
+})(SetColor || (SetColor = {}));
+exports.SetColor = SetColor;
 class StudySmarterStudySet {
     constructor(account, id, creator_id, name, color, isShared, flashcard_count, created, published_at, last_used) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, isShared });
@@ -59,7 +61,7 @@ class StudySmarterStudySet {
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
             method: "GET"
         }).then(({ results }) => results.map(card => {
-            return StudySmarterFlashCard_1.default.fromJSON(this._account, card);
+            return StudySmarterFlashCard_1.default.fromJSON(this._account, this, card);
         }));
     }
     async delete() {
@@ -83,28 +85,26 @@ class StudySmarterStudySet {
         });
     }
     async addFlashCardClone(card) {
-        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
-            method: "POST",
-            body: JSON.stringify({
-                "flashcard_image_ids": card.flashcard_images.map(i => i.id),
-                "tags": [],
-                "question_html": card.question_html,
-                "answer_html": card.answer_html,
-                "shared": 2,
-                "hint_html": [],
-                "solution_html": ""
-            })
-        }).then(() => this._flashcard_count++);
+        // const images: ImageEntry[] = [];
+        // console.log(card)
+        // for (const image of card.flashcard_images) {
+        //     console.log(image)
+        //     const imageBlob = await (await this._account.fetch(image.presigned_url, {})).blob();
+        //     images.push({
+        //         name: image.presigned_url,
+        //         image_blob: imageBlob
+        //     })
+        // }
+        return this.addFlashCard(card.question, card.answer, []);
     }
     async addFlashCard(question, answer, images = []) {
-        // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
-        let imageObjects = {};
-        const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
-        const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
+        let uploadedImages = {};
+        const questionWithImages = await this.replaceImageTags(question, images, uploadedImages);
+        const answerWithImages = await this.replaceImageTags(answer, images, uploadedImages);
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
             method: "POST",
             body: JSON.stringify({
-                "flashcard_image_ids": Object.values(imageObjects).map(i => i.id),
+                "flashcard_image_ids": Object.values(uploadedImages).map(i => i.id),
                 "tags": [],
                 "question_html": [{
                         text: questionWithImages,
@@ -122,18 +122,28 @@ class StudySmarterStudySet {
     }
     async replaceImageTags(text, images, uploadedImages) {
         let result = text;
-        for (const match of Utils_1.default.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
-            const imageEntry = images.find(i => i.name === match[1]);
+        for (const [full, src] of Utils_1.default.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
+            if (src.startsWith("http")) {
+                images.push({
+                    name: src,
+                    image_blob: await (await fetch((0, html_entities_1.decode)(src), { method: "GET" })).blob()
+                });
+            }
+            const imageEntry = images.find(i => i.name === src);
+            if (!imageEntry) {
+                console.log("Image not found", src);
+                continue;
+            }
             const uploaded = uploadedImages[imageEntry.name] || await this.uploadImage(imageEntry);
             uploadedImages[imageEntry.name] = uploaded;
-            result = result.replace(new RegExp(`<img[^s>]*src=\"${match[1]}\"[^>]*>`, "g"), `<img localid="${uploaded.localID}" width="${uploaded.width}" class="fr-fic fr-dii">`);
+            result = result.replace(new RegExp(`<img[^s>]*src=\"${Utils_1.default.escapeRegExp(src)}\"[^>]*>`, "g"), `<img localid="${uploaded.localID}" width="${uploaded.width}" class="fr-fic fr-dii">`);
         }
         return result;
     }
     async uploadImage(image) {
         var _a;
         const body = new FormData();
-        body.append("image_file", (_a = image.image_file) !== null && _a !== void 0 ? _a : await fetch(image.image_string).then(r => r.blob()));
+        body.append("image_file", (_a = image.image_blob) !== null && _a !== void 0 ? _a : await fetch(image.image_string).then(r => r.blob()));
         body.append("localID", "" + Date.now());
         return await this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/images/`, {
             method: "POST",

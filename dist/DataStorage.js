@@ -13,10 +13,10 @@ class DataStorage {
         fs.writeFileSync(storagePath, JSON.stringify(this.data));
     }
 }
+exports.default = DataStorage;
 (() => {
     if (!fs.existsSync(storagePath)) {
         fs.writeFileSync(storagePath, "{}");
     }
 })();
 DataStorage.data = JSON.parse(fs.readFileSync(storagePath, "utf8"));
-exports.default = DataStorage;

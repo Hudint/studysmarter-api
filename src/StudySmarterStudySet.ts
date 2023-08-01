@@ -1,3 +1,4 @@
+import {decode} from "html-entities";
 import StudySmarterAccount from "./StudySmarterAccount";
 import Utils from "./Utils";
 import moment = require("moment");
@@ -103,7 +104,7 @@ export default class StudySmarterStudySet {
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
             method: "GET"
         }).then(({results}) => results.map(card => {
-            return StudySmarterFlashCard.fromJSON(this._account, card)
+            return StudySmarterFlashCard.fromJSON(this._account, this, card)
         }))
     }
 
@@ -130,31 +131,29 @@ export default class StudySmarterStudySet {
     }
 
     async addFlashCardClone(card: StudySmarterFlashCard) {
-        const images: ImageEntry[] = [];
-        console.log(card)
-        for (const image of card.flashcard_images) {
-            console.log(image)
-            const imageBlob = await (await this._account.fetch(image.presigned_url, {})).blob();
-            images.push({
-                name: image.presigned_url,
-                image_blob: imageBlob
-            })
-        }
-
-        return this.addFlashCard(card.question, card.answer, images);
+        // const images: ImageEntry[] = [];
+        // console.log(card)
+        // for (const image of card.flashcard_images) {
+        //     console.log(image)
+        //     const imageBlob = await (await this._account.fetch(image.presigned_url, {})).blob();
+        //     images.push({
+        //         name: image.presigned_url,
+        //         image_blob: imageBlob
+        //     })
+        // }
+        return this.addFlashCard(card.question, card.answer, []);
     }
 
     async addFlashCard(question: string, answer: string, images: ImageEntry[] = []) {
-        // const imageObjects: {[name: string]: FlashcardImage} = Object.fromEntries(await Promise.all());
-        let imageObjects: { [name: string]: FlashcardImage } = {};
+        let uploadedImages: { [name: string]: FlashcardImage } = {};
 
-        const questionWithImages = await this.replaceImageTags(question, images, imageObjects);
-        const answerWithImages = await this.replaceImageTags(answer, images, imageObjects);
+        const questionWithImages = await this.replaceImageTags(question, images, uploadedImages);
+        const answerWithImages = await this.replaceImageTags(answer, images, uploadedImages);
 
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/`, {
             method: "POST",
             body: JSON.stringify({
-                "flashcard_image_ids": Object.values(imageObjects).map(i => i.id),
+                "flashcard_image_ids": Object.values(uploadedImages).map(i => i.id),
                 "tags": [],
                 "question_html": [{
                     text: questionWithImages,
@@ -171,23 +170,26 @@ export default class StudySmarterStudySet {
         }).then(() => this._flashcard_count++)
     }
 
-    private async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
+    async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
         [name: string]: FlashcardImage
     }) {
-
-        console.log(text, images, uploadedImages);
         let result = text;
 
-        for (const match of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
-            const imageEntry = images.find(i => i.name === match[1]);
+        for (const [full, src] of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
+            if(src.startsWith("http")){
+                images.push({
+                    name: src,
+                    image_blob: await (await fetch(decode(src), {method: "GET"})).blob()
+                })
+            }
+            const imageEntry = images.find(i => i.name === src);
             if(!imageEntry) {
-                console.log("Image not found", match[1]);
+                console.log("Image not found", src);
                 continue;
             }
             const uploaded = uploadedImages[imageEntry.name] || await this.uploadImage(imageEntry);
             uploadedImages[imageEntry.name] = uploaded;
-
-            result = result.replace(new RegExp(`<img[^s>]*src=\"${match[1]}\"[^>]*>`, "g"), `<img localid="${uploaded.localID}" width="${uploaded.width}" class="fr-fic fr-dii">`)
+            result = result.replace(new RegExp(`<img[^s>]*src=\"${Utils.escapeRegExp(src)}\"[^>]*>`, "g"), `<img localid="${uploaded.localID}" width="${uploaded.width}" class="fr-fic fr-dii">`)
         }
         return result;
     }

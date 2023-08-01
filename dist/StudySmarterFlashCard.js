@@ -8,11 +8,11 @@ var FlashCardShareStatus;
     FlashCardShareStatus[FlashCardShareStatus["PUBLIC"] = 2] = "PUBLIC";
 })(FlashCardShareStatus || (FlashCardShareStatus = {}));
 class StudySmarterFlashCard {
-    constructor(account, id, original_studyset_id, question_html, answer_html, hint_html, flashcard_images, tags, shared) {
-        Utils_1.default.checkParamsAreSet({ account: account, id, original_studyset_id, question_html, answer_html, hint_html, flashcard_images, tags });
+    constructor(account, set, id, question_html, answer_html, hint_html, flashcard_images, tags, shared) {
+        Utils_1.default.checkParamsAreSet({ account: account, set, id, question_html, answer_html, hint_html, flashcard_images, tags });
         this._account = account;
+        this._set = set;
         this._id = id;
-        this._original_studyset_id = original_studyset_id;
         this._question_html = question_html;
         this._answer_html = answer_html;
         this._hint_html = hint_html;
@@ -23,9 +23,6 @@ class StudySmarterFlashCard {
     get id() {
         return this._id;
     }
-    get original_studyset_id() {
-        return this._original_studyset_id;
-    }
     get question_html() {
         return this._question_html;
     }
@@ -35,6 +32,12 @@ class StudySmarterFlashCard {
     get hint_html() {
         return this._hint_html;
     }
+    get question() {
+        return this._question_html.map(part => part.text).join("");
+    }
+    get answer() {
+        return this._answer_html.filter(p => p.is_correct).map(part => part.text).join("");
+    }
     get flashcard_images() {
         return this._flashcard_images;
     }
@@ -42,28 +45,33 @@ class StudySmarterFlashCard {
         return this._tags;
     }
     async modifyText(question, answer) {
-        this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._original_studyset_id}/flashcards/${this._id}/`, {
+        const images = [];
+        const uploadedImages = {};
+        const replacedQuestion = await this._set.replaceImageTags(question, images, uploadedImages);
+        const replacedAnswer = await this._set.replaceImageTags(answer, images, uploadedImages);
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._set.id}/flashcards/${this._id}/`, {
             method: "PATCH",
             body: JSON.stringify({
                 question_html: [{
-                        text: question,
+                        text: replacedQuestion,
                         is_correct: true
                     }],
                 answer_html: [{
-                        text: answer,
+                        text: replacedAnswer,
                         is_correct: true
                     }],
-                flashcard_image_ids: this._flashcard_images.map(i => i.id),
+                flashcard_image_ids: Object.values(uploadedImages).map(i => i.id),
                 hint_html: this._hint_html,
                 tags: this._tags,
             })
-        }).then(({ question_html, answer_html }) => {
+        }).then(({ question_html, answer_html, flashcard_images }) => {
             this._question_html = question_html;
             this._answer_html = answer_html;
+            this._flashcard_images = flashcard_images;
         });
     }
-    static fromJSON(account, json) {
-        return new StudySmarterFlashCard(account, json["id"], json["original_studyset_id"], json["question_html"], json["answer_html"], json["hint_html"], json["flashcard_images"], json["tags"], json["shared"]);
+    static fromJSON(account, set, json) {
+        return new StudySmarterFlashCard(account, set, json["id"], json["question_html"], json["answer_html"], json["hint_html"], json["flashcard_images"], json["tags"], json["shared"]);
     }
 }
 exports.default = StudySmarterFlashCard;
