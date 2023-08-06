@@ -24,6 +24,15 @@ declare type FlashcardImage = {
     "localID": number;
     "flashcardinfo"?: number;
 };
+export declare enum StudySmarterSearchOrder {
+    smart = "smart",
+    chronological = "chronological"
+}
+export declare type StudySmarterSearchParams = {
+    searchText?: string;
+    quantity?: number;
+    order?: StudySmarterSearchOrder;
+};
 export declare type ImageEntry = {
     "name": string;
     "image_string"?: string;
@@ -50,7 +59,7 @@ export default class StudySmarterStudySet {
     get published_at(): string;
     get created(): string;
     get last_used(): string;
-    getFlashCards(): Promise<StudySmarterFlashCard[]>;
+    getFlashCards(params?: StudySmarterSearchParams): Promise<StudySmarterFlashCard[]>;
     delete(): Promise<any>;
     modify(name?: string, color?: SetColor, isPublic?: boolean): any;
     addFlashCardClone(card: StudySmarterFlashCard): Promise<any>;

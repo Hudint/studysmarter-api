@@ -53,6 +53,12 @@ export default class Utils {
         return c;
     }
 
+    public static selectEnum<T>(select: string, all: {[key: string]: T}): T {
+        const selected = all[select];
+        if(!selected) throw new Error("Invalid selection: " + select + ", Valid: " + Object.keys(all).join(", "));
+        return selected;
+    }
+
     public static collectOption<T>(value: T, prev: T[]): T[]{
         if(!prev) prev = [];
         prev.push(value);
@@ -130,5 +136,15 @@ export default class Utils {
 
     public static escapeRegExp(string: string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    }
+
+
+    public static mapNullable<T>(item: T, fn: (t: T) => any, nullValue?: any): any{
+        if(item === null || item === undefined) return nullValue;
+        return fn(item);
+    }
+
+    public static encodeURLNullable(item?: string | number | boolean): string{
+        return Utils.mapNullable(item, encodeURIComponent, "");
     }
 }

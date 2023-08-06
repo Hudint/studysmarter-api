@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SetColor = void 0;
+exports.SetColor = exports.StudySmarterSearchOrder = void 0;
 const html_entities_1 = require("html-entities");
 const Utils_1 = require("./Utils");
 const StudySmarterFlashCard_1 = require("./StudySmarterFlashCard");
@@ -16,6 +16,11 @@ var SetColor;
     SetColor[SetColor["Violet"] = 7] = "Violet";
 })(SetColor || (SetColor = {}));
 exports.SetColor = SetColor;
+var StudySmarterSearchOrder;
+(function (StudySmarterSearchOrder) {
+    StudySmarterSearchOrder["smart"] = "smart";
+    StudySmarterSearchOrder["chronological"] = "chronological";
+})(StudySmarterSearchOrder = exports.StudySmarterSearchOrder || (exports.StudySmarterSearchOrder = {}));
 class StudySmarterStudySet {
     constructor(account, id, creator_id, name, color, isShared, flashcard_count, created, published_at, last_used) {
         Utils_1.default.checkParamsAreSet({ account: account, id, name, color, isShared });
@@ -57,8 +62,8 @@ class StudySmarterStudySet {
     get last_used() {
         return this._last_used;
     }
-    getFlashCards() {
-        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
+    getFlashCards(params) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=${Utils_1.default.encodeURLNullable(params === null || params === void 0 ? void 0 : params.searchText)}&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=${(params === null || params === void 0 ? void 0 : params.quantity) ? encodeURIComponent(params === null || params === void 0 ? void 0 : params.quantity) : "999999"}&created_by=&order=${(params === null || params === void 0 ? void 0 : params.order) ? encodeURIComponent(params === null || params === void 0 ? void 0 : params.quantity) : StudySmarterSearchOrder.chronological}&cursor=`, {
             method: "GET"
         }).then(({ results }) => results.map(card => {
             return StudySmarterFlashCard_1.default.fromJSON(this._account, this, card);

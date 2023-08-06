@@ -7,7 +7,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as cliProgress from "cli-progress";
 import StudySmarterAccount from "./StudySmarterAccount";
-import StudySmarterStudySet, {SetColor} from "./StudySmarterStudySet";
+import StudySmarterStudySet, {
+    SetColor,
+    StudySmarterSearchOrder,
+    StudySmarterSearchParams
+} from "./StudySmarterStudySet";
 import Utils from "./Utils";
 import DataStorage from "./DataStorage";
 import StudySmarterFlashCard from "./StudySmarterFlashCard";
@@ -26,6 +30,13 @@ program.version('0.0.1')
             .argParser(Utils.parseColor))
     .option("-sh, --share", "Select shared / isPublic", false)
     .option("-n, --name <name>", "Set temp name (e.g. for modify)")
+    .addOption(
+        new Option("-q, --quantity <quantity>", "Sets the quantity variable for fetching flashcards")
+            .argParser(Number.parseInt))
+    .addOption(
+        new Option("-o, --order <order>", "Sets the order variable for fetching flashcards")
+            .choices(Object.keys(StudySmarterSearchOrder))
+            .argParser(order => Utils.selectEnum(order, StudySmarterSearchOrder)))
     .option("-fs, --fetch-sets", "Fetches all StudySmarter Sets and prints them to the console")
     .option("-sn, --select-set-by-name <name>", "Selects a StudySmarter Set by name")
     .option("-s, --select-set <id>", "Selects a StudySmarter Set by id")
@@ -33,7 +44,7 @@ program.version('0.0.1')
     .option("-fc, --fetch-cards", "Fetches all StudySmarter Cards from the selected Set and prints them to the console")
     .option("-f, --front <text>", "Sets the front variable to modify flashcards")
     .option("-b, --back <text>", "Sets the back variable to modify flashcards")
-    .option("-a, --add-flashcard <text>", "Adds a new Flashcard to a StudySmarter Set, front and back are seperated via |", Utils.collectOption)
+    .option("-a, --add-flashcard <text>", "Adds a new Flashcard to a StudySmarter Set, front and back are seperated via ;", Utils.collectOption)
     .option("-sc, --select-card <id>", "Selects a StudySmarter Card by id")
     .option("-pc, --print-card", "Prints the selected StudySmarter Card to the console")
     .option("-cc, --copy-cards <deck-id>", "Copies all cards from StudySmarter Set to the current selected Set")
@@ -89,6 +100,10 @@ async function run() {
 
     let selectedSet: StudySmarterStudySet;
     let sets: StudySmarterStudySet[];
+    let searchParams: StudySmarterSearchParams = {};
+
+    if(options.quantity) searchParams.quantity = options.quantity;
+    if(options.order) searchParams.order = options.order;
 
     if (options.fetchSets) {
         sets = sets || await account.getStudySets(options.verbose);
@@ -125,11 +140,10 @@ async function run() {
 
     if (options.fetchCards) {
         if (!selectedSet) throw new Error("No set selected");
-        cards = cards ?? await selectedSet.getFlashCards();
+        cards = cards ?? await selectedSet.getFlashCards(searchParams);
         console.table(cards
             .map(c => ({id: c.id, front: c.question_html.map(q => q.text), back: c.answer_html.map(q => q.text)})));
     }
-
 
     if (options.selectCard) {
         if (!selectedSet) throw new Error("No set selected");
@@ -141,6 +155,7 @@ async function run() {
         if (!selectedSet) throw new Error("No set selected");
         for (const text of options.addFlashcard) {
             printVerbose("Adding Flashcard:", text)
+            if(!text.includes(";")) throw new Error("Please provide a front and back seperated by ';'");
             const [front, back] = text.split(";");
             await selectedSet.addFlashCard(front, back);
             printSuccess(`Added Flashcard With Front: '${front}' Back: '${back}' to set '${selectedSet.name}'`);
@@ -170,7 +185,7 @@ async function run() {
         sets = sets || await account.getStudySets();
         const otherSet = sets.find(s => s.id == options.copyCards);
         if(!otherSet) throw new Error(`Could not find deck with id ${options.copyCards}`);
-        const cards = await otherSet.getFlashCards();
+        const cards = await otherSet.getFlashCards(searchParams);
         progress.start(cards.length, 0)
         for(const card of cards) {
             await selectedSet.addFlashCardClone(card);

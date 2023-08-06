@@ -25,11 +25,16 @@ export default class Utils {
     static nullableDateFormat(input: string): string;
     static getObjectWithoutKeys(obj: any, keys: string[]): any;
     static parseColor(color: string): SetColor;
+    static selectEnum<T>(select: string, all: {
+        [key: string]: T;
+    }): T;
     static collectOption<T>(value: T, prev: T[]): T[];
     static checkParamsAreSet(params: any): void;
     static regexExecArray(regex: RegExp, str: string): RegExpExecArray[];
     static convertFromAnki(file: string): Promise<AnkiResult>;
     static sleep(ms: number): Promise<void>;
     static escapeRegExp(string: string): string;
+    static mapNullable<T>(item: T, fn: (t: T) => any, nullValue?: any): any;
+    static encodeURLNullable(item?: string | number | boolean): string;
 }
 export {};

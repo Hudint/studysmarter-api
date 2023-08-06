@@ -30,6 +30,12 @@ class Utils {
             throw new Error("Invalid color: " + color);
         return c;
     }
+    static selectEnum(select, all) {
+        const selected = all[select];
+        if (!selected)
+            throw new Error("Invalid selection: " + select + ", Valid: " + Object.keys(all).join(", "));
+        return selected;
+    }
     static collectOption(value, prev) {
         if (!prev)
             prev = [];
@@ -101,6 +107,14 @@ class Utils {
     }
     static escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    }
+    static mapNullable(item, fn, nullValue) {
+        if (item === null || item === undefined)
+            return nullValue;
+        return fn(item);
+    }
+    static encodeURLNullable(item) {
+        return Utils.mapNullable(item, encodeURIComponent, "");
     }
 }
 exports.default = Utils;

@@ -30,6 +30,15 @@ type FlashcardImage = {
     "flashcardinfo"?: number
 }
 
+export enum StudySmarterSearchOrder {
+    smart = "smart",
+    chronological = "chronological"
+}
+export type StudySmarterSearchParams = {
+    searchText?: string,
+    quantity?: number,
+    order?: StudySmarterSearchOrder,
+}
 
 export type ImageEntry = {
     "name": string,
@@ -100,8 +109,9 @@ export default class StudySmarterStudySet {
         return this._last_used;
     }
 
-    getFlashCards() : Promise<StudySmarterFlashCard[]> {
-        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=9999999&created_by=&order=smart&cursor=`, {
+    getFlashCards(params?: StudySmarterSearchParams) : Promise<StudySmarterFlashCard[]> {
+        return this._account.fetchJson(
+            `https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=${Utils.encodeURLNullable(params?.searchText)}&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=${params?.quantity ? encodeURIComponent(params?.quantity) : "999999"}&created_by=&order=${params?.order ? encodeURIComponent(params?.quantity) : StudySmarterSearchOrder.chronological}&cursor=`, {
             method: "GET"
         }).then(({results}) => results.map(card => {
             return StudySmarterFlashCard.fromJSON(this._account, this, card)
