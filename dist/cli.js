@@ -124,8 +124,9 @@ async function run() {
         if (!selectedSet)
             throw new Error("No set selected");
         cards = cards !== null && cards !== void 0 ? cards : await selectedSet.getFlashCards(searchParams);
-        console.table(cards
-            .map(c => ({ id: c.id, front: c.question_html.map(q => q.text), back: c.answer_html.map(q => q.text) })));
+        cards
+            .map(c => ({ id: c.id, front: c.question_html.map(q => q.text), back: c.answer_html.map(q => q.text) }))
+            .forEach(c => console.log(c));
     }
     if (options.selectCard) {
         if (!selectedSet)
