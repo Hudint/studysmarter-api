@@ -2,7 +2,8 @@ import * as decompress from 'decompress';
 import * as fs from "fs";
 import * as Database from 'better-sqlite3';
 import * as path from "path";
-import {SetColor} from "./StudySmarterStudySet";
+// import { Apkg } from "@seangenabe/apkg"
+import StudySmarterStudySet, {SetColor} from "./StudySmarterStudySet";
 import moment = require("moment");
 
 type Card = {
@@ -20,6 +21,11 @@ type AnkiResult = {
     decks: Deck[],
     imagePaths: { name: string, path: string }[],
     outFolder: string
+}
+
+let currentMediaId = 0;
+function getNextMediaId(){
+    return currentMediaId++;
 }
 
 export default class Utils {
@@ -40,7 +46,7 @@ export default class Utils {
     }
 
     public static getObjectWithoutKeys(obj: any, keys: string[]): any {
-        return Object.fromEntries(Object.entries(obj).filter(([k, v]) => !keys.includes(k)));
+        return Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));
     }
 
     public static parseColor(color: string): SetColor {
@@ -80,6 +86,38 @@ export default class Utils {
             matches.push(match);
         }
         return matches;
+    }
+
+    public static async downloadImage(url: string, file: string) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        fs.writeFileSync(file, buffer);
+    }
+
+    public static async convertToAnki(set: StudySmarterStudySet, file: string) {
+        // if (fs.existsSync(file)) throw new Error("File does already exist");
+        //
+        // const folder = path.join(__dirname, "..", "tmp");
+        // if(!fs.existsSync(folder))
+        //     fs.mkdirSync(folder)
+        //
+        //
+        // const apkg = new Apkg();
+        // apkg
+        //
+        // const cards = await set.getFlashCards();
+        //
+        // cards.forEach(card => {
+        //     card.flashcard_images.map(image => {
+        //         const id = getNextMediaId();
+        //         console.log(image.image_string.match(/^.*\/([/]+)$/)[1])
+        //         // const out = path.join(folder, id + ".png");
+        //         // Utils.downloadImage(image.presigned_url, out);
+        //
+        //     })
+        // })
     }
 
     public static async convertFromAnki(file: string): Promise<AnkiResult> {
@@ -122,6 +160,7 @@ export default class Utils {
                 })
             }))
         })
+        db.close();
 
         return {
             decks,

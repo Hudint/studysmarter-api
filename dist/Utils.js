@@ -4,8 +4,13 @@ const decompress = require("decompress");
 const fs = require("fs");
 const Database = require("better-sqlite3");
 const path = require("path");
+// import { Apkg } from "@seangenabe/apkg"
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 const moment = require("moment");
+let currentMediaId = 0;
+function getNextMediaId() {
+    return currentMediaId++;
+}
 class Utils {
     constructor() {
     }
@@ -57,6 +62,36 @@ class Utils {
         }
         return matches;
     }
+    static async downloadImage(url, file) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        fs.writeFileSync(file, buffer);
+    }
+    static async convertToAnki(set, file) {
+        // if (fs.existsSync(file)) throw new Error("File does already exist");
+        //
+        // const folder = path.join(__dirname, "..", "tmp");
+        // if(!fs.existsSync(folder))
+        //     fs.mkdirSync(folder)
+        //
+        //
+        // const apkg = new Apkg();
+        // apkg
+        //
+        // const cards = await set.getFlashCards();
+        //
+        // cards.forEach(card => {
+        //     card.flashcard_images.map(image => {
+        //         const id = getNextMediaId();
+        //         console.log(image.image_string.match(/^.*\/([/]+)$/)[1])
+        //         // const out = path.join(folder, id + ".png");
+        //         // Utils.downloadImage(image.presigned_url, out);
+        //
+        //     })
+        // })
+    }
     static async convertFromAnki(file) {
         if (!fs.existsSync(file))
             throw new Error("File does not exist");
@@ -96,6 +131,7 @@ class Utils {
                 });
             }));
         });
+        db.close();
         return {
             decks,
             imagePaths,
@@ -117,7 +153,7 @@ class Utils {
         return Utils.mapNullable(item, encodeURIComponent, "");
     }
 }
-exports.default = Utils;
 Utils.DATE_FORMATS = {
     DATETIME: "DD.MM.YYYY hh:mm",
 };
+exports.default = Utils;

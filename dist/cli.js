@@ -40,6 +40,7 @@ commander_1.program.version('0.0.1')
     .option("-pc, --print-card", "Prints the selected StudySmarter Card to the console")
     .option("-cc, --copy-cards <deck-id>", "Copies all cards from StudySmarter Set to the current selected Set")
     .option("-i, --import-sets <path>", "Imports all decks from a 'apkg' File to StudySmarter")
+    .option("-e, --export-set <path>", "[NOT AVAILABLE] Exports set from StudySmarter to a 'apkg' File")
     .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
     .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
     .option("-mc, --modify-card", "Modifies the selected StudySmarter Card")
@@ -50,7 +51,7 @@ commander_1.program.version('0.0.1')
     .addOption(new commander_1.Option("-rc, --recopy-cards <deck-id>").hideHelp());
 const options = commander_1.program.opts();
 commander_1.program
-    .action(() => run().catch(e => console.error(chalk.red(e))))
+    .action(() => run().catch(e => console.error(options.verbose ? e : chalk.red(e))))
     .parse(process.argv);
 function printVerbose(...args) {
     if (options.verbose)
@@ -223,9 +224,9 @@ async function run() {
         const cards = ankiResult.decks.flatMap(d => d.cards);
         const images = ankiResult.imagePaths.map(({ name, path }) => ({
             name,
-            image_file: new Blob([fs.readFileSync(path)])
+            image_blob: new Blob([fs.readFileSync(path)])
         }));
-        printSuccess(`Found ${cards.length} cards in ${options.importSets}`);
+        printSuccess(`Found ${cards.length} cards in ${options.importCards}`);
         progress.start(cards.length, 0);
         for (const card of cards) {
             await selectedSet.addFlashCard(card.front, card.back, images);
@@ -238,7 +239,7 @@ async function run() {
         const ankiResult = await Utils_1.default.convertFromAnki(path.join(process.cwd(), options.importSets));
         const images = ankiResult.imagePaths.map(({ name, path }) => ({
             name,
-            image_file: new Blob([fs.readFileSync(path)])
+            image_blob: new Blob([fs.readFileSync(path)])
         }));
         printSuccess(`Found ${ankiResult.decks.length} decks in ${options.importSets}`);
         progress.start(ankiResult.decks.reduce((p, c) => p + c.cards.length, 0), 0);
@@ -251,6 +252,12 @@ async function run() {
         }
         progress.stop();
         fs.rmSync(ankiResult.outFolder, { recursive: true });
+    }
+    if (options.exportSet) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        const ankiResult = await Utils_1.default.convertToAnki(selectedSet, path.join(process.cwd(), options.exportSet));
+        // printSuccess(`Exported ${cards} cards to ${options.exportCards}`);
     }
     if (options.logout) {
         DataStorage_1.default.set("account", undefined);

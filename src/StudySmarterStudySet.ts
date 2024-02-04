@@ -1,7 +1,6 @@
 import {decode} from "html-entities";
 import StudySmarterAccount from "./StudySmarterAccount";
 import Utils from "./Utils";
-import moment = require("moment");
 import StudySmarterFlashCard from "./StudySmarterFlashCard";
 
 enum SetColor {
@@ -111,7 +110,7 @@ export default class StudySmarterStudySet {
 
     getFlashCards(params?: StudySmarterSearchParams) : Promise<StudySmarterFlashCard[]> {
         return this._account.fetchJson(
-            `https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=${Utils.encodeURLNullable(params?.searchText)}&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=${params?.quantity ? encodeURIComponent(params?.quantity) : "999999"}&created_by=&order=${params?.order ? encodeURIComponent(params?.quantity) : StudySmarterSearchOrder.chronological}&cursor=`, {
+            `https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=${Utils.encodeURLNullable(params?.searchText)}&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=${params?.quantity ? encodeURIComponent(params?.quantity) : "999999"}&created_by=&order=${params?.order ? encodeURIComponent(params?.quantity) : StudySmarterSearchOrder.chronological}`, {
             method: "GET"
         }).then(({results}) => results.map(card => {
             return StudySmarterFlashCard.fromJSON(this._account, this, card)

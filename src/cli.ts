@@ -8,6 +8,7 @@ import * as path from "path";
 import * as cliProgress from "cli-progress";
 import StudySmarterAccount from "./StudySmarterAccount";
 import StudySmarterStudySet, {
+    ImageEntry,
     SetColor,
     StudySmarterSearchOrder,
     StudySmarterSearchParams
@@ -49,6 +50,7 @@ program.version('0.0.1')
     .option("-pc, --print-card", "Prints the selected StudySmarter Card to the console")
     .option("-cc, --copy-cards <deck-id>", "Copies all cards from StudySmarter Set to the current selected Set")
     .option("-i, --import-sets <path>", "Imports all decks from a 'apkg' File to StudySmarter")
+    .option("-e, --export-set <path>", "[NOT AVAILABLE] Exports set from StudySmarter to a 'apkg' File")
     .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
     .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
     .option("-mc, --modify-card", "Modifies the selected StudySmarter Card")
@@ -61,7 +63,7 @@ program.version('0.0.1')
 const options = program.opts();
 
 program
-    .action(() => run().catch(e => console.error(chalk.red(e))))
+    .action(() => run().catch(e => console.error(options.verbose ? e : chalk.red(e))))
     .parse(process.argv);
 
 function printVerbose(...args: any[]) {
@@ -140,7 +142,7 @@ async function run() {
 
     if (options.fetchCards) {
         if (!selectedSet) throw new Error("No set selected");
-        cards = cards ?? await selectedSet.getFlashCards(searchParams);
+        cards = await selectedSet.getFlashCards(searchParams);
         cards
             .map(c => ({id: c.id, front: c.question_html.map(q => q.text), back: c.answer_html.map(q => q.text)}))
             .forEach(c => console.log(c));
@@ -237,12 +239,12 @@ async function run() {
         if(!selectedSet) throw new Error("No set selected")
         const ankiResult = await Utils.convertFromAnki(path.join(process.cwd(), options.importCards))
         const cards = ankiResult.decks.flatMap(d => d.cards);
-        const images = ankiResult.imagePaths.map(({name, path}) => ({
+        const images: ImageEntry[] = ankiResult.imagePaths.map(({name, path}) => ({
             name,
-            image_file: new Blob([fs.readFileSync(path)])
+            image_blob: new Blob([fs.readFileSync(path)])
         }))
 
-        printSuccess(`Found ${cards.length} cards in ${options.importSets}`);
+        printSuccess(`Found ${cards.length} cards in ${options.importCards}`);
 
         progress.start(cards.length, 0);
         for (const card of cards) {
@@ -255,9 +257,9 @@ async function run() {
 
     if (options.importSets) {
         const ankiResult = await Utils.convertFromAnki(path.join(process.cwd(), options.importSets))
-        const images = ankiResult.imagePaths.map(({name, path}) => ({
+        const images: ImageEntry[] = ankiResult.imagePaths.map(({name, path}) => ({
             name,
-            image_file: new Blob([fs.readFileSync(path)])
+            image_blob: new Blob([fs.readFileSync(path)])
         }))
 
         printSuccess(`Found ${ankiResult.decks.length} decks in ${options.importSets}`);
@@ -272,6 +274,12 @@ async function run() {
         }
         progress.stop();
         fs.rmSync(ankiResult.outFolder, {recursive: true})
+    }
+
+    if(options.exportSet) {
+        if (!selectedSet) throw new Error("No set selected");
+        const ankiResult = await Utils.convertToAnki(selectedSet, path.join(process.cwd(), options.exportSet))
+        // printSuccess(`Exported ${cards} cards to ${options.exportCards}`);
     }
 
     if (options.logout) {

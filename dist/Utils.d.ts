@@ -1,14 +1,14 @@
-import { SetColor } from "./StudySmarterStudySet";
-declare type Card = {
+import StudySmarterStudySet, { SetColor } from "./StudySmarterStudySet";
+type Card = {
     front: string;
     back: string;
 };
-declare type Deck = {
+type Deck = {
     id: number;
     name: string;
     cards: Card[];
 };
-declare type AnkiResult = {
+type AnkiResult = {
     decks: Deck[];
     imagePaths: {
         name: string;
@@ -31,6 +31,8 @@ export default class Utils {
     static collectOption<T>(value: T, prev: T[]): T[];
     static checkParamsAreSet(params: any): void;
     static regexExecArray(regex: RegExp, str: string): RegExpExecArray[];
+    static downloadImage(url: string, file: string): Promise<void>;
+    static convertToAnki(set: StudySmarterStudySet, file: string): Promise<void>;
     static convertFromAnki(file: string): Promise<AnkiResult>;
     static sleep(ms: number): Promise<void>;
     static escapeRegExp(string: string): string;

@@ -10,7 +10,7 @@ declare enum SetColor {
     Green = 6,
     Violet = 7
 }
-declare type FlashcardImage = {
+type FlashcardImage = {
     "id": number;
     "image_string": string;
     "presigned_url": string;
@@ -28,12 +28,12 @@ export declare enum StudySmarterSearchOrder {
     smart = "smart",
     chronological = "chronological"
 }
-export declare type StudySmarterSearchParams = {
+export type StudySmarterSearchParams = {
     searchText?: string;
     quantity?: number;
     order?: StudySmarterSearchOrder;
 };
-export declare type ImageEntry = {
+export type ImageEntry = {
     "name": string;
     "image_string"?: string;
     "image_blob"?: Blob;

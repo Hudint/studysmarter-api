@@ -69,7 +69,8 @@ class StudySmarterAccount {
         else {
             return Promise.reject(JSON.stringify({
                 status: res.status,
-                response: await res.text()
+                response: await res.text(),
+                url: res.url
             }));
         }
     }
