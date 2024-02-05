@@ -7,7 +7,7 @@ type htmlPart = {
     is_correct: boolean
 }
 
-enum FlashCardShareStatus {
+export enum FlashCardShareStatus {
     PRIVATE = 0,
     INVITED = 1,
     PUBLIC = 2
@@ -71,6 +71,14 @@ export default class StudySmarterFlashCard{
         return this._tags;
     }
 
+    get shared(): FlashCardShareStatus {
+        return this._shared;
+    }
+
+    public selfOwned() : boolean{
+        return true;
+    }
+
     async modifyText(question: string, answer: string): Promise<void> {
         const images: ImageEntry[] = [];
         const uploadedImages: { [name: string]: FlashcardImage } = {};
@@ -98,6 +106,17 @@ export default class StudySmarterFlashCard{
             this._question_html = question_html;
             this._answer_html = answer_html;
             this._flashcard_images = flashcard_images;
+        });
+    }
+
+    async modifyShare(shared: FlashCardShareStatus){
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._set.id}/flashcards/${this._id}/`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                shared: shared
+            })
+        }).then(({shared}) => {
+            this._shared = shared;
         });
     }
 

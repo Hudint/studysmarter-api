@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as Database from 'better-sqlite3';
 import * as path from "path";
 // import { Apkg } from "@seangenabe/apkg"
-import StudySmarterStudySet, {SetColor} from "./StudySmarterStudySet";
+import StudySmarterStudySet from "./StudySmarterStudySet";
 import moment = require("moment");
 
 type Card = {
@@ -49,13 +49,11 @@ export default class Utils {
         return Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));
     }
 
-    public static parseColor(color: string): SetColor {
-        let c;
-        if(/^[0-9]+$/g.test(color)) c = parseInt(color);
-        else c = parseInt(SetColor[color]);
-
-        if(isNaN(c)) throw new Error("Invalid color: " + color);
-
+    public static selectIntEnum<T>(select: string, all: any): T {
+        let c : any;
+        if(/^[0-9]+$/g.test(select)) c = parseInt(select);
+        else c = parseInt(all[select]);
+        if(isNaN(c)) throw new Error("Invalid value: " + select);
         return c;
     }
 

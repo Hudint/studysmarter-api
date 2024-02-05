@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.FlashCardShareStatus = void 0;
 const Utils_1 = require("./Utils");
 var FlashCardShareStatus;
 (function (FlashCardShareStatus) {
     FlashCardShareStatus[FlashCardShareStatus["PRIVATE"] = 0] = "PRIVATE";
     FlashCardShareStatus[FlashCardShareStatus["INVITED"] = 1] = "INVITED";
     FlashCardShareStatus[FlashCardShareStatus["PUBLIC"] = 2] = "PUBLIC";
-})(FlashCardShareStatus || (FlashCardShareStatus = {}));
+})(FlashCardShareStatus || (exports.FlashCardShareStatus = FlashCardShareStatus = {}));
 class StudySmarterFlashCard {
     constructor(account, set, id, question_html, answer_html, hint_html, flashcard_images, tags, shared) {
         Utils_1.default.checkParamsAreSet({ account: account, set, id, question_html, answer_html, hint_html, flashcard_images, tags });
@@ -44,6 +45,12 @@ class StudySmarterFlashCard {
     get tags() {
         return this._tags;
     }
+    get shared() {
+        return this._shared;
+    }
+    selfOwned() {
+        return true;
+    }
     async modifyText(question, answer) {
         const images = [];
         const uploadedImages = {};
@@ -68,6 +75,16 @@ class StudySmarterFlashCard {
             this._question_html = question_html;
             this._answer_html = answer_html;
             this._flashcard_images = flashcard_images;
+        });
+    }
+    async modifyShare(shared) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._set.id}/flashcards/${this._id}/`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                shared: shared
+            })
+        }).then(({ shared }) => {
+            this._shared = shared;
         });
     }
     static fromJSON(account, set, json) {

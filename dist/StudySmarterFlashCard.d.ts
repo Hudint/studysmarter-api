@@ -4,7 +4,7 @@ type htmlPart = {
     text: string;
     is_correct: boolean;
 };
-declare enum FlashCardShareStatus {
+export declare enum FlashCardShareStatus {
     PRIVATE = 0,
     INVITED = 1,
     PUBLIC = 2
@@ -28,7 +28,10 @@ export default class StudySmarterFlashCard {
     get answer(): string;
     get flashcard_images(): FlashcardImage[];
     get tags(): number[];
+    get shared(): FlashCardShareStatus;
+    selfOwned(): boolean;
     modifyText(question: string, answer: string): Promise<void>;
+    modifyShare(shared: FlashCardShareStatus): Promise<any>;
     static fromJSON(account: StudySmarterAccount, set: StudySmarterStudySet, json: any): StudySmarterFlashCard;
 }
 export {};

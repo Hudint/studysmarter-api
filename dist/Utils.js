@@ -4,8 +4,6 @@ const decompress = require("decompress");
 const fs = require("fs");
 const Database = require("better-sqlite3");
 const path = require("path");
-// import { Apkg } from "@seangenabe/apkg"
-const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 const moment = require("moment");
 let currentMediaId = 0;
 function getNextMediaId() {
@@ -23,16 +21,16 @@ class Utils {
         return Utils.nullableMap(input, (i) => moment(i).format(Utils.DATE_FORMATS.DATETIME));
     }
     static getObjectWithoutKeys(obj, keys) {
-        return Object.fromEntries(Object.entries(obj).filter(([k, v]) => !keys.includes(k)));
+        return Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));
     }
-    static parseColor(color) {
+    static selectIntEnum(select, all) {
         let c;
-        if (/^[0-9]+$/g.test(color))
-            c = parseInt(color);
+        if (/^[0-9]+$/g.test(select))
+            c = parseInt(select);
         else
-            c = parseInt(StudySmarterStudySet_1.SetColor[color]);
+            c = parseInt(all[select]);
         if (isNaN(c))
-            throw new Error("Invalid color: " + color);
+            throw new Error("Invalid value: " + select);
         return c;
     }
     static selectEnum(select, all) {

@@ -11,6 +11,7 @@ const StudySmarterAccount_1 = require("./StudySmarterAccount");
 const StudySmarterStudySet_1 = require("./StudySmarterStudySet");
 const Utils_1 = require("./Utils");
 const DataStorage_1 = require("./DataStorage");
+const StudySmarterFlashCard_1 = require("./StudySmarterFlashCard");
 commander_1.program.version('0.0.1')
     .name("studysmarter-api")
     .description("A CLI for a StudySmarter-Api-Wrapper")
@@ -20,7 +21,7 @@ commander_1.program.version('0.0.1')
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
     .addOption(new commander_1.Option("-c, --color <color>", "Select color")
     .choices(Object.keys(StudySmarterStudySet_1.SetColor))
-    .argParser(Utils_1.default.parseColor))
+    .argParser(input => Utils_1.default.selectIntEnum(input, StudySmarterStudySet_1.SetColor)))
     .option("-sh, --share", "Select shared / isPublic", false)
     .option("-n, --name <name>", "Set temp name (e.g. for modify)")
     .addOption(new commander_1.Option("-q, --quantity <quantity>", "Sets the quantity variable for fetching flashcards")
@@ -44,6 +45,9 @@ commander_1.program.version('0.0.1')
     .option("-ic, --import-cards <path>", "Imports all cards from a 'apkg' File to StudySmarter")
     .option("-m, --modify-set", "Modifies the selected StudySmarter Set")
     .option("-mc, --modify-card", "Modifies the selected StudySmarter Card")
+    .addOption(new commander_1.Option("-sac, --share-all-cards <share-status>", "Set all cards share status")
+    .choices(Object.keys(StudySmarterFlashCard_1.FlashCardShareStatus))
+    .argParser(status => Utils_1.default.selectIntEnum(status, StudySmarterFlashCard_1.FlashCardShareStatus)))
     .option("-d, --delete-set", "Deletes the selected StudySmarter Set")
     .option("--delete-all-sets", "Deletes all StudySmarter Sets")
     .option("-pa, --print-account", "Prints the StudySmarter Account to the console")
@@ -124,7 +128,7 @@ async function run() {
     if (options.fetchCards) {
         if (!selectedSet)
             throw new Error("No set selected");
-        cards = cards !== null && cards !== void 0 ? cards : await selectedSet.getFlashCards(searchParams);
+        cards = await selectedSet.getFlashCards(searchParams);
         cards
             .map(c => ({ id: c.id, front: c.question_html.map(q => q.text), back: c.answer_html.map(q => q.text) }))
             .forEach(c => console.log(c));
@@ -159,6 +163,18 @@ async function run() {
             throw new Error("Please provide a front and back");
         await selectedCard.modifyText(options.front, options.back);
         printSuccess(`Modified Card '${selectedCard.id}' with Front: '${options.front}' Back: '${options.back}'`);
+    }
+    if (options.shareAllCards) {
+        if (!selectedSet)
+            throw new Error("No set selected");
+        cards = cards !== null && cards !== void 0 ? cards : await selectedSet.getFlashCards();
+        cards = cards.filter(card => card.selfOwned() && card.shared != options.shareAllCards);
+        progress.start(cards.length, 0);
+        for (const card of cards) {
+            await card.modifyShare(options.shareAllCards);
+            progress.increment();
+        }
+        progress.stop();
     }
     if (options.modifySet) {
         if (!selectedSet)

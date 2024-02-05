@@ -1,4 +1,4 @@
-import StudySmarterStudySet, { SetColor } from "./StudySmarterStudySet";
+import StudySmarterStudySet from "./StudySmarterStudySet";
 type Card = {
     front: string;
     back: string;
@@ -24,7 +24,7 @@ export default class Utils {
     static nullableMap<T, R>(obj: T, fn: (o: T) => R): R;
     static nullableDateFormat(input: string): string;
     static getObjectWithoutKeys(obj: any, keys: string[]): any;
-    static parseColor(color: string): SetColor;
+    static selectIntEnum<T>(select: string, all: any): T;
     static selectEnum<T>(select: string, all: {
         [key: string]: T;
     }): T;
