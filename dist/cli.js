@@ -20,11 +20,12 @@ commander_1.program.version('0.0.1')
     .option("-l, --login <email:password>", "Login to StudySmarter with your credentials seperated with : (e.g. -l example@test.de:password)")
     .option("-lo, --logout", "Logout from StudySmarter")
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
+    .option("-cms, --create-multiple-sets <count>", "Creates multiple StudySmarter Sets")
     .addOption(new commander_1.Option("-c, --color <color>", "Select color")
     .choices(Object.keys(StudySmarterStudySet_1.StudySmarterColor))
     .argParser(input => Utils_1.default.selectIntEnum(input, StudySmarterStudySet_1.StudySmarterColor)))
     .option("-sh, --share", "Select shared / isPublic", false)
-    .option("-n, --name <name>", "Set temp name (e.g. for modify)")
+    .option("-n, --name <name>", "Set temp name (e.g. for modify or multi create as prefix)")
     .addOption(new commander_1.Option("-q, --quantity <quantity>", "Sets the quantity variable for fetching flashcards")
     .argParser(Number.parseInt))
     .addOption(new commander_1.Option("-o, --order <order>", "Sets the order variable for fetching flashcards")
@@ -68,7 +69,7 @@ function printSuccess(message) {
 }
 printVerbose("Options:", options);
 async function run() {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f;
     let account;
     if (options.login) {
         const { 1: email, 2: password } = options.login.match(/^([^:]+):(.*)$/);
@@ -126,8 +127,20 @@ async function run() {
         sets = sets || await account.getStudySets(options.verbose);
         console.table(sets.map(s => Utils_1.default.getObjectWithoutKeys(s, ["_account"])));
     }
+    if (options.createMultipleSets) {
+        const count = Number.parseInt(options.createMultipleSets);
+        if (isNaN(count) || count <= 0)
+            throw new Error("Please provide a valid number for count");
+        progress.start(count, 0);
+        for (let i = 0; i < count; i++) {
+            const set = await account.createStudySet(((_c = options.name) !== null && _c !== void 0 ? _c : "Set") + i, (_d = options.color) !== null && _d !== void 0 ? _d : StudySmarterStudySet_1.StudySmarterColor.Purple, options.share);
+            printVerbose("Created:", set);
+            progress.increment();
+        }
+        progress.stop();
+    }
     if (options.createSet) {
-        const set = await account.createStudySet(options.createSet, (_c = options.color) !== null && _c !== void 0 ? _c : StudySmarterStudySet_1.StudySmarterColor.Purple, options.share);
+        const set = await account.createStudySet(options.createSet, (_e = options.color) !== null && _e !== void 0 ? _e : StudySmarterStudySet_1.StudySmarterColor.Purple, options.share);
         printVerbose("Created:", set);
         printSuccess(`Created Set '${set.name}' with id ${set.id} in color ${StudySmarterStudySet_1.StudySmarterColor[set.color]}`);
         selectedSet = set;
@@ -237,7 +250,7 @@ async function run() {
         const currentCards = await selectedSet.getFlashCards();
         progress.start(currentCards.length, 0);
         for (const card of otherCards) {
-            await ((_d = currentCards.find(c => c.question == card.question)) === null || _d === void 0 ? void 0 : _d.modifyText(card.question, card.answer));
+            await ((_f = currentCards.find(c => c.question == card.question)) === null || _f === void 0 ? void 0 : _f.modifyText(card.question, card.answer));
             progress.increment();
         }
         progress.stop();

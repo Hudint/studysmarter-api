@@ -26,12 +26,13 @@ program.version('0.0.1')
     .option("-l, --login <email:password>", "Login to StudySmarter with your credentials seperated with : (e.g. -l example@test.de:password)")
     .option("-lo, --logout", "Logout from StudySmarter")
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
+    .option("-cms, --create-multiple-sets <count>", "Creates multiple StudySmarter Sets")
     .addOption(
         new Option("-c, --color <color>", "Select color")
             .choices(Object.keys(StudySmarterColor))
             .argParser(input => Utils.selectIntEnum<StudySmarterColor>(input,StudySmarterColor)))
     .option("-sh, --share", "Select shared / isPublic", false)
-    .option("-n, --name <name>", "Set temp name (e.g. for modify)")
+    .option("-n, --name <name>", "Set temp name (e.g. for modify or multi create as prefix)")
     .addOption(
         new Option("-q, --quantity <quantity>", "Sets the quantity variable for fetching flashcards")
             .argParser(Number.parseInt))
@@ -143,6 +144,19 @@ async function run() {
     if (options.fetchSets) {
         sets = sets || await account.getStudySets(options.verbose);
         console.table(sets.map(s => Utils.getObjectWithoutKeys(s, ["_account"])));
+    }
+
+    if (options.createMultipleSets) {
+        const count = Number.parseInt(options.createMultipleSets);
+        if(isNaN(count) || count <= 0) throw new Error("Please provide a valid number for count");
+
+        progress.start(count, 0);
+        for (let i = 0; i < count; i++) {
+            const set = await account.createStudySet((options.name ?? "Set") + i, options.color ?? StudySmarterColor.Purple, options.share);
+            printVerbose("Created:", set)
+            progress.increment();
+        }
+        progress.stop();
     }
 
     if (options.createSet) {
