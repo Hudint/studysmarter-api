@@ -1,4 +1,4 @@
-import StudySmarterStudySet, {SetColor} from "./StudySmarterStudySet";
+import StudySmarterStudySet, {StudySmarterColor} from "./StudySmarterStudySet";
 import Utils from "./Utils";
 
 
@@ -37,6 +37,12 @@ export default class StudySmarterAccount {
             .then(StudySmarterAccount.validateResponse)
     }
 
+    public getUser() {
+        return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {
+            method: "GET"
+        })
+    }
+
     public changePassword(newPassword: string) {
         return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {
             method: "PATCH",
@@ -48,7 +54,7 @@ export default class StudySmarterAccount {
         })
     }
 
-    public createStudySet(name: string, color: SetColor, isPublic: boolean) {
+    public createStudySet(name: string, color: StudySmarterColor, isPublic: boolean) {
         return this.fetchJson(`https://prod.studysmarter.de/studysets/`, {
             method: "POST",
             body: JSON.stringify({

@@ -1,6 +1,7 @@
 import StudySmarterAccount from "./StudySmarterAccount";
+import StudySmarterTag from "./StudySmarterTag";
 import StudySmarterFlashCard from "./StudySmarterFlashCard";
-declare enum SetColor {
+declare enum StudySmarterColor {
     Red = 0,
     Blue = 1,
     Mint = 2,
@@ -49,10 +50,10 @@ export default class StudySmarterStudySet {
     private _created?;
     private _published_at?;
     private _last_used?;
-    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: SetColor, isShared: boolean, flashcard_count: number, created?: string, published_at?: string, last_used?: string);
+    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: StudySmarterColor, isShared: boolean, flashcard_count: number, created?: string, published_at?: string, last_used?: string);
     get id(): number;
     get name(): string;
-    get color(): SetColor;
+    get color(): StudySmarterColor;
     get creator_id(): number;
     get isShared(): boolean;
     get flashcard_count(): number;
@@ -60,10 +61,12 @@ export default class StudySmarterStudySet {
     get created(): string;
     get last_used(): string;
     getFlashCards(params?: StudySmarterSearchParams): Promise<StudySmarterFlashCard[]>;
+    getTags(params?: StudySmarterSearchParams): Promise<StudySmarterTag[]>;
     delete(): Promise<any>;
-    modify(name?: string, color?: SetColor, isPublic?: boolean): any;
+    modify(name?: string, color?: StudySmarterColor, isPublic?: boolean): any;
     addFlashCardClone(card: StudySmarterFlashCard): Promise<any>;
     addFlashCard(question: string, answer: string, images?: ImageEntry[]): Promise<any>;
+    addTag(name: string, color: StudySmarterColor): Promise<any>;
     replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
         [name: string]: FlashcardImage;
     }): Promise<string>;
@@ -71,4 +74,4 @@ export default class StudySmarterStudySet {
     static fromJSON(account: StudySmarterAccount, json: any): StudySmarterStudySet;
 }
 export type { FlashcardImage };
-export { SetColor };
+export { StudySmarterColor };

@@ -1,9 +1,10 @@
 import {decode} from "html-entities";
 import StudySmarterAccount from "./StudySmarterAccount";
+import StudySmarterTag from "./StudySmarterTag";
 import Utils from "./Utils";
 import StudySmarterFlashCard from "./StudySmarterFlashCard";
 
-enum SetColor {
+enum StudySmarterColor {
     Red = 0,
     Blue = 1,
     Mint = 2,
@@ -33,6 +34,7 @@ export enum StudySmarterSearchOrder {
     smart = "smart",
     chronological = "chronological"
 }
+
 export type StudySmarterSearchParams = {
     searchText?: string,
     quantity?: number,
@@ -51,14 +53,14 @@ export default class StudySmarterStudySet {
     private readonly _id: number;
     private readonly _creator_id?: number;
     private _name: string;
-    private _color: SetColor;
+    private _color: StudySmarterColor;
     private _isShared: boolean;
     private _flashcard_count: number;
     private _created?: string;
     private _published_at?: string;
     private _last_used?: string;
 
-    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: SetColor, isShared: boolean, flashcard_count: number, created?: string, published_at?: string, last_used?: string) {
+    constructor(account: StudySmarterAccount, id: number, creator_id: number, name: string, color: StudySmarterColor, isShared: boolean, flashcard_count: number, created?: string, published_at?: string, last_used?: string) {
         Utils.checkParamsAreSet({account: account, id, name, color, isShared});
         this._account = account;
         this._id = id;
@@ -80,7 +82,7 @@ export default class StudySmarterStudySet {
         return this._name;
     }
 
-    get color(): SetColor {
+    get color(): StudySmarterColor {
         return this._color;
     }
 
@@ -108,12 +110,21 @@ export default class StudySmarterStudySet {
         return this._last_used;
     }
 
-    getFlashCards(params?: StudySmarterSearchParams) : Promise<StudySmarterFlashCard[]> {
+    getFlashCards(params?: StudySmarterSearchParams): Promise<StudySmarterFlashCard[]> {
         return this._account.fetchJson(
             `https://prod.studysmarter.de/studysets/${this._id}/flashcards/?search=${Utils.encodeURLNullable(params?.searchText)}&s_bad=true&s_medium=true&s_good=true&s_trash=false&s_unseen=true&tag_ids=&quantity=${params?.quantity ? encodeURIComponent(params?.quantity) : "999999"}&created_by=&order=${params?.order ? encodeURIComponent(params?.quantity) : StudySmarterSearchOrder.chronological}`, {
-            method: "GET"
-        }).then(({results}) => results.map(card => {
+                method: "GET"
+            }).then(({results}) => results.map(card => {
             return StudySmarterFlashCard.fromJSON(this._account, this, card)
+        }))
+    }
+
+    getTags(params?: StudySmarterSearchParams): Promise<StudySmarterTag[]> {
+        return this._account.fetchJson(
+            `https://prod.studysmarter.de/studysets/${this._id}/tags/`, {
+                method: "GET"
+            }).then(({results}) => results.map(card => {
+            return StudySmarterTag.fromJSON(this._account, this, card)
         }))
     }
 
@@ -123,7 +134,7 @@ export default class StudySmarterStudySet {
         })
     }
 
-    modify(name?: string, color?: SetColor, isPublic?: boolean) {
+    modify(name?: string, color?: StudySmarterColor, isPublic?: boolean) {
         console.log(name, color, isPublic)
         return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/`, {
             method: "PATCH",
@@ -179,20 +190,27 @@ export default class StudySmarterStudySet {
         }).then(() => this._flashcard_count++)
     }
 
+    async addTag(name: string, color: StudySmarterColor) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/`, {
+            method: "POST",
+            body: JSON.stringify({name, colour: color})
+        })
+    }
+
     async replaceImageTags(text: string, images: ImageEntry[], uploadedImages: {
         [name: string]: FlashcardImage
     }) {
         let result = text;
 
         for (const [full, src] of Utils.regexExecArray(/<img[^s>]*src="([^"]+)"[^>]*>/g, text)) {
-            if(src.startsWith("http")){
+            if (src.startsWith("http")) {
                 images.push({
                     name: src,
                     image_blob: await (await fetch(decode(src), {method: "GET"})).blob()
                 })
             }
             const imageEntry = images.find(i => i.name === src);
-            if(!imageEntry) {
+            if (!imageEntry) {
                 console.log("Image not found", src);
                 continue;
             }
@@ -230,4 +248,4 @@ export default class StudySmarterStudySet {
 }
 
 export type {FlashcardImage}
-export {SetColor}
+export {StudySmarterColor}

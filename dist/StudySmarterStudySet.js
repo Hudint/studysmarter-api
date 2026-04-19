@@ -1,20 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SetColor = exports.StudySmarterSearchOrder = void 0;
+exports.StudySmarterColor = exports.StudySmarterSearchOrder = void 0;
 const html_entities_1 = require("html-entities");
+const StudySmarterTag_1 = require("./StudySmarterTag");
 const Utils_1 = require("./Utils");
 const StudySmarterFlashCard_1 = require("./StudySmarterFlashCard");
-var SetColor;
-(function (SetColor) {
-    SetColor[SetColor["Red"] = 0] = "Red";
-    SetColor[SetColor["Blue"] = 1] = "Blue";
-    SetColor[SetColor["Mint"] = 2] = "Mint";
-    SetColor[SetColor["Purple"] = 3] = "Purple";
-    SetColor[SetColor["Teal"] = 4] = "Teal";
-    SetColor[SetColor["Orange"] = 5] = "Orange";
-    SetColor[SetColor["Green"] = 6] = "Green";
-    SetColor[SetColor["Violet"] = 7] = "Violet";
-})(SetColor || (exports.SetColor = SetColor = {}));
+var StudySmarterColor;
+(function (StudySmarterColor) {
+    StudySmarterColor[StudySmarterColor["Red"] = 0] = "Red";
+    StudySmarterColor[StudySmarterColor["Blue"] = 1] = "Blue";
+    StudySmarterColor[StudySmarterColor["Mint"] = 2] = "Mint";
+    StudySmarterColor[StudySmarterColor["Purple"] = 3] = "Purple";
+    StudySmarterColor[StudySmarterColor["Teal"] = 4] = "Teal";
+    StudySmarterColor[StudySmarterColor["Orange"] = 5] = "Orange";
+    StudySmarterColor[StudySmarterColor["Green"] = 6] = "Green";
+    StudySmarterColor[StudySmarterColor["Violet"] = 7] = "Violet";
+})(StudySmarterColor || (exports.StudySmarterColor = StudySmarterColor = {}));
 var StudySmarterSearchOrder;
 (function (StudySmarterSearchOrder) {
     StudySmarterSearchOrder["smart"] = "smart";
@@ -66,6 +67,13 @@ class StudySmarterStudySet {
             method: "GET"
         }).then(({ results }) => results.map(card => {
             return StudySmarterFlashCard_1.default.fromJSON(this._account, this, card);
+        }));
+    }
+    getTags(params) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/tags/`, {
+            method: "GET"
+        }).then(({ results }) => results.map(card => {
+            return StudySmarterTag_1.default.fromJSON(this._account, this, card);
         }));
     }
     async delete() {
@@ -123,6 +131,12 @@ class StudySmarterStudySet {
                 "solution_html": ""
             })
         }).then(() => this._flashcard_count++);
+    }
+    async addTag(name, color) {
+        return this._account.fetchJson(`https://prod.studysmarter.de/studysets/${this._id}/`, {
+            method: "POST",
+            body: JSON.stringify({ name, colour: color })
+        });
     }
     async replaceImageTags(text, images, uploadedImages) {
         let result = text;

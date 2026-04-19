@@ -13,13 +13,14 @@ export default class StudySmarterFlashCard {
     private readonly _account;
     private readonly _set;
     private readonly _id;
+    private readonly _creator;
     private _question_html;
     private _answer_html;
     private _hint_html;
     private _flashcard_images;
     private _tags;
     private _shared;
-    constructor(account: StudySmarterAccount, set: StudySmarterStudySet, id: number, question_html: htmlPart[], answer_html: htmlPart[], hint_html: string[], flashcard_images: FlashcardImage[], tags: number[], shared: FlashCardShareStatus);
+    constructor(account: StudySmarterAccount, set: StudySmarterStudySet, id: number, creator: number, question_html: htmlPart[], answer_html: htmlPart[], hint_html: string[], flashcard_images: FlashcardImage[], tags: number[], shared: FlashCardShareStatus);
     get id(): number;
     get question_html(): htmlPart[];
     get answer_html(): htmlPart[];
@@ -29,7 +30,7 @@ export default class StudySmarterFlashCard {
     get flashcard_images(): FlashcardImage[];
     get tags(): number[];
     get shared(): FlashCardShareStatus;
-    selfOwned(): boolean;
+    isSelfOwned(): boolean;
     modifyText(question: string, answer: string): Promise<void>;
     modifyShare(shared: FlashCardShareStatus): Promise<any>;
     static fromJSON(account: StudySmarterAccount, set: StudySmarterStudySet, json: any): StudySmarterFlashCard;

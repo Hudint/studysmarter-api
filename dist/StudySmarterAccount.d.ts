@@ -1,4 +1,4 @@
-import StudySmarterStudySet, { SetColor } from "./StudySmarterStudySet";
+import StudySmarterStudySet, { StudySmarterColor } from "./StudySmarterStudySet";
 export default class StudySmarterAccount {
     private readonly _id;
     private readonly _token;
@@ -7,8 +7,9 @@ export default class StudySmarterAccount {
     get token(): string;
     fetchJson(url: string, RequestInit: RequestInit, setContentType?: boolean): any;
     fetch(url: string, RequestInit: RequestInit, setContentType?: boolean): any;
+    getUser(): any;
     changePassword(newPassword: string): any;
-    createStudySet(name: string, color: SetColor, isPublic: boolean): any;
+    createStudySet(name: string, color: StudySmarterColor, isPublic: boolean): any;
     getStudySets(verbose?: boolean): Promise<StudySmarterStudySet[]>;
     private static validateResponse;
     static fromEmailAndPassword(email: string, password: string): Promise<StudySmarterAccount>;

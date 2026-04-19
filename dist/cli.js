@@ -16,12 +16,13 @@ commander_1.program.version('0.0.1')
     .name("studysmarter-api")
     .description("A CLI for a StudySmarter-Api-Wrapper")
     .addHelpText("before", chalk.blue(figlet.textSync('StudySmarter CLI', { horizontalLayout: 'default' })))
+    .option("-u, --select-user <accountid>", "Login to StudySmarter with saved credentials")
     .option("-l, --login <email:password>", "Login to StudySmarter with your credentials seperated with : (e.g. -l example@test.de:password)")
     .option("-lo, --logout", "Logout from StudySmarter")
     .option("-cs, --create-set <name>", "Creates a new StudySmarter Set")
     .addOption(new commander_1.Option("-c, --color <color>", "Select color")
-    .choices(Object.keys(StudySmarterStudySet_1.SetColor))
-    .argParser(input => Utils_1.default.selectIntEnum(input, StudySmarterStudySet_1.SetColor)))
+    .choices(Object.keys(StudySmarterStudySet_1.StudySmarterColor))
+    .argParser(input => Utils_1.default.selectIntEnum(input, StudySmarterStudySet_1.StudySmarterColor)))
     .option("-sh, --share", "Select shared / isPublic", false)
     .option("-n, --name <name>", "Set temp name (e.g. for modify)")
     .addOption(new commander_1.Option("-q, --quantity <quantity>", "Sets the quantity variable for fetching flashcards")
@@ -30,6 +31,7 @@ commander_1.program.version('0.0.1')
     .choices(Object.keys(StudySmarterStudySet_1.StudySmarterSearchOrder))
     .argParser(order => Utils_1.default.selectEnum(order, StudySmarterStudySet_1.StudySmarterSearchOrder)))
     .option("-fs, --fetch-sets", "Fetches all StudySmarter Sets and prints them to the console")
+    .option("-fu, --fetch-user", "Fetches User and prints it to the console")
     .option("-sn, --select-set-by-name <name>", "Selects a StudySmarter Set by name")
     .option("-s, --select-set <id>", "Selects a StudySmarter Set by id")
     .option("-ps, --print-set", "Prints the selected StudySmarter Set to the console")
@@ -66,7 +68,7 @@ function printSuccess(message) {
 }
 printVerbose("Options:", options);
 async function run() {
-    var _a, _b;
+    var _a, _b, _c, _d;
     let account;
     if (options.login) {
         const { 1: email, 2: password } = options.login.match(/^([^:]+):(.*)$/);
@@ -74,19 +76,44 @@ async function run() {
         if (!email || !password)
             throw new Error("Please provide a valid email and password seperated by ':'");
         account = await StudySmarterAccount_1.default.fromEmailAndPassword(email, password);
-        DataStorage_1.default.set("account", account);
+        const accounts = (_a = DataStorage_1.default.get("accounts")) !== null && _a !== void 0 ? _a : {};
+        accounts[account.id] = account.token;
+        DataStorage_1.default.set("accounts", accounts);
+        DataStorage_1.default.set("currentAccountId", account.id);
         printSuccess("Logged in successfully as " + email);
     }
+    if (options.selectUser) {
+        const accounts = (_b = DataStorage_1.default.get("accounts")) !== null && _b !== void 0 ? _b : {};
+        const token = accounts[options.selectUser];
+        if (!token)
+            throw new Error("Please provide a valid id.");
+        DataStorage_1.default.set("currentAccountId", options.selectUser);
+        account = new StudySmarterAccount_1.default(options.selectUser, token);
+        printSuccess("Logged in successfully as " + options.selectUser);
+    }
     else {
-        const savedAcc = DataStorage_1.default.get("account");
-        if (!savedAcc)
-            throw new Error("No login provided and no account saved");
-        account = new StudySmarterAccount_1.default(savedAcc._id, savedAcc._token);
+        let currentAccountId = DataStorage_1.default.get("currentAccountId");
+        if (!currentAccountId) {
+            const savedAcc = DataStorage_1.default.get("account");
+            if (!savedAcc)
+                throw new Error("No login provided and no account saved");
+            currentAccountId = savedAcc._id;
+            DataStorage_1.default.set("accounts", { [savedAcc._id]: savedAcc._token });
+            DataStorage_1.default.set("currentAccountId", savedAcc._id);
+            console.log("Migrated account");
+        }
+        const accounts = DataStorage_1.default.get("accounts");
+        const token = accounts[currentAccountId];
+        if (!token)
+            throw new Error("Current account ID is missing");
+        account = new StudySmarterAccount_1.default(currentAccountId, token);
         printSuccess("Logged in successfully as id " + account.id);
     }
     printVerbose("Account:", account);
     if (options.printAccount)
         console.table([account]);
+    if (options.fetchUser)
+        console.log(await account.getUser());
     const progress = new cliProgress.SingleBar({}, cliProgress.Presets.rect);
     let selectedSet;
     let sets;
@@ -100,9 +127,9 @@ async function run() {
         console.table(sets.map(s => Utils_1.default.getObjectWithoutKeys(s, ["_account"])));
     }
     if (options.createSet) {
-        const set = await account.createStudySet(options.createSet, (_a = options.color) !== null && _a !== void 0 ? _a : StudySmarterStudySet_1.SetColor.Purple, options.share);
+        const set = await account.createStudySet(options.createSet, (_c = options.color) !== null && _c !== void 0 ? _c : StudySmarterStudySet_1.StudySmarterColor.Purple, options.share);
         printVerbose("Created:", set);
-        printSuccess(`Created Set '${set.name}' with id ${set.id} in color ${StudySmarterStudySet_1.SetColor[set.color]}`);
+        printSuccess(`Created Set '${set.name}' with id ${set.id} in color ${StudySmarterStudySet_1.StudySmarterColor[set.color]}`);
         selectedSet = set;
     }
     if (options.selectSetByName) {
@@ -168,7 +195,7 @@ async function run() {
         if (!selectedSet)
             throw new Error("No set selected");
         cards = cards !== null && cards !== void 0 ? cards : await selectedSet.getFlashCards();
-        cards = cards.filter(card => card.selfOwned() && card.shared != options.shareAllCards);
+        cards = cards.filter(card => card.isSelfOwned() && card.shared != options.shareAllCards);
         progress.start(cards.length, 0);
         for (const card of cards) {
             await card.modifyShare(options.shareAllCards);
@@ -210,7 +237,7 @@ async function run() {
         const currentCards = await selectedSet.getFlashCards();
         progress.start(currentCards.length, 0);
         for (const card of otherCards) {
-            await ((_b = currentCards.find(c => c.question == card.question)) === null || _b === void 0 ? void 0 : _b.modifyText(card.question, card.answer));
+            await ((_d = currentCards.find(c => c.question == card.question)) === null || _d === void 0 ? void 0 : _d.modifyText(card.question, card.answer));
             progress.increment();
         }
         progress.stop();
@@ -260,7 +287,7 @@ async function run() {
         printSuccess(`Found ${ankiResult.decks.length} decks in ${options.importSets}`);
         progress.start(ankiResult.decks.reduce((p, c) => p + c.cards.length, 0), 0);
         for (const deck of ankiResult.decks) {
-            const re = await account.createStudySet(deck.name, StudySmarterStudySet_1.SetColor.Violet, false);
+            const re = await account.createStudySet(deck.name, StudySmarterStudySet_1.StudySmarterColor.Violet, false);
             for (const card of deck.cards) {
                 await re.addFlashCard(card.front, card.back, images);
                 progress.increment();

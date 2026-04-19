@@ -9,11 +9,12 @@ var FlashCardShareStatus;
     FlashCardShareStatus[FlashCardShareStatus["PUBLIC"] = 2] = "PUBLIC";
 })(FlashCardShareStatus || (exports.FlashCardShareStatus = FlashCardShareStatus = {}));
 class StudySmarterFlashCard {
-    constructor(account, set, id, question_html, answer_html, hint_html, flashcard_images, tags, shared) {
+    constructor(account, set, id, creator, question_html, answer_html, hint_html, flashcard_images, tags, shared) {
         Utils_1.default.checkParamsAreSet({ account: account, set, id, question_html, answer_html, hint_html, flashcard_images, tags });
         this._account = account;
         this._set = set;
         this._id = id;
+        this._creator = creator;
         this._question_html = question_html;
         this._answer_html = answer_html;
         this._hint_html = hint_html;
@@ -48,8 +49,8 @@ class StudySmarterFlashCard {
     get shared() {
         return this._shared;
     }
-    selfOwned() {
-        return true;
+    isSelfOwned() {
+        return this._creator === this._account.id;
     }
     async modifyText(question, answer) {
         const images = [];
@@ -88,7 +89,7 @@ class StudySmarterFlashCard {
         });
     }
     static fromJSON(account, set, json) {
-        return new StudySmarterFlashCard(account, set, json["id"], json["question_html"], json["answer_html"], json["hint_html"], json["flashcard_images"], json["tags"], json["shared"]);
+        return new StudySmarterFlashCard(account, set, json["id"], json["creator"], json["question_html"], json["answer_html"], json["hint_html"], json["flashcard_images"], json["tags"], json["shared"]);
     }
 }
 exports.default = StudySmarterFlashCard;

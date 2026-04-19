@@ -29,6 +29,11 @@ class StudySmarterAccount {
             .then(res => res.status === 504 ? Utils_1.default.sleep(10000).then(() => this.fetch(url, RequestInit, setContentType)) : res)
             .then(StudySmarterAccount.validateResponse);
     }
+    getUser() {
+        return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {
+            method: "GET"
+        });
+    }
     changePassword(newPassword) {
         return this.fetchJson(`https://prod.studysmarter.de/users/${this._id}/`, {
             method: "PATCH",

@@ -5,7 +5,9 @@
   "main": "./dist/cli.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "studysmarter-api": "./dist/cli.js"
+    "studysmarter-api": "./dist/cli.js",
+    "studysmarter-cli": "./dist/cli.js",
+    "studysmarter": "./dist/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

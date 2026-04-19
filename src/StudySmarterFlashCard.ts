@@ -17,6 +17,7 @@ export default class StudySmarterFlashCard{
     private readonly _account: StudySmarterAccount;
     private readonly _set: StudySmarterStudySet;
     private readonly _id: number;
+    private readonly _creator: number;
     private _question_html: htmlPart[];
     private _answer_html: htmlPart[];
     private _hint_html: string[];
@@ -25,12 +26,13 @@ export default class StudySmarterFlashCard{
     private _shared: FlashCardShareStatus;
 
 
-    constructor(account: StudySmarterAccount, set: StudySmarterStudySet, id: number, question_html: htmlPart[], answer_html: htmlPart[], hint_html: string[], flashcard_images: FlashcardImage[], tags: number[], shared: FlashCardShareStatus) {
+    constructor(account: StudySmarterAccount, set: StudySmarterStudySet, id: number, creator: number, question_html: htmlPart[], answer_html: htmlPart[], hint_html: string[], flashcard_images: FlashcardImage[], tags: number[], shared: FlashCardShareStatus) {
         Utils.checkParamsAreSet({account: account, set, id, question_html, answer_html, hint_html, flashcard_images, tags});
 
         this._account = account;
         this._set = set;
         this._id = id;
+        this._creator = creator;
         this._question_html = question_html;
         this._answer_html = answer_html;
         this._hint_html = hint_html;
@@ -75,8 +77,8 @@ export default class StudySmarterFlashCard{
         return this._shared;
     }
 
-    public selfOwned() : boolean{
-        return true;
+    public isSelfOwned() : boolean{
+        return this._creator === this._account.id;
     }
 
     async modifyText(question: string, answer: string): Promise<void> {
@@ -121,6 +123,6 @@ export default class StudySmarterFlashCard{
     }
 
     public static fromJSON(account: StudySmarterAccount, set: StudySmarterStudySet, json: any) : StudySmarterFlashCard {
-        return new StudySmarterFlashCard(account, set, json["id"], json["question_html"], json["answer_html"], json["hint_html"], json["flashcard_images"], json["tags"], json["shared"]);
+        return new StudySmarterFlashCard(account, set, json["id"], json["creator"], json["question_html"], json["answer_html"], json["hint_html"], json["flashcard_images"], json["tags"], json["shared"]);
     }
 }
